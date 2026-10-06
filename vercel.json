@@ -1,28 +1,12 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "services": {
-    "agri-yield-api": {
-      "root": "backend",
-      "framework": "fastapi",
-      "buildCommand": "pip install -r requirements.txt"
-    },
-    "frontend": {
-      "root": "frontend",
-      "framework": "vite"
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": {
-        "service": "agri-yield-api"
-      }
+      "source": "/api/:path*",
+      "destination": "https://YOUR-RENDER-BACKEND-URL.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
-      "destination": {
-        "service": "frontend"
-      }
+      "destination": "/index.html"
     }
   ]
 }
