@@ -1,0 +1,4413 @@
+PROJECT ROLE
+You are a Principal AI Product Architect, Senior Full-Stack Engineer, Machine Learning Engineer, UX/UI Designer, Data Engineer, DevOps Engineer, and Agricultural Technology Specialist.
+
+Your task is to design and build a premium, production-style, responsive web application called:
+
+"AI-Powered Crop Yield Prediction & Optimization System"
+
+The application must simulate a complete end-to-end farmer experience rather than being a simple dashboard or static frontend.
+
+The system should combine:
+1. AI-powered crop yield prediction
+2. Dynamic weather monitoring
+3. RMC/IMD weather information integration
+4. Weather-change detection
+5. Dynamic farming-plan updates
+6. Soil analysis
+7. Irrigation recommendations
+8. Fertilizer recommendations
+9. Pest/disease risk analysis
+10. Crop health monitoring
+11. Farm management
+12. AI agricultural assistant
+13. Historical analytics
+14. Notifications and alerts
+15. Farmer-friendly explanations
+16. Modern premium UI/UX
+17. Responsive desktop/tablet/mobile experience
+
+============================================================
+1. CORE PRODUCT VISION
+============================================================
+
+Build a premium AI agriculture platform that behaves like a digital agricultural advisor for farmers.
+
+The central concept is:
+
+FARM DATA
++
+WEATHER DATA
++
+SOIL DATA
++
+CROP DATA
++
+HISTORICAL DATA
++
+OPTIONAL SATELLITE/IMAGE DATA
+        ↓
+AI ANALYSIS ENGINE
+        ↓
+YIELD PREDICTION
++
+WEATHER RISK
++
+CROP HEALTH
++
+RESOURCE OPTIMIZATION
+        ↓
+DYNAMIC FARM PLAN
+        ↓
+FARMER ACTIONS
+        ↓
+MONITORING + FEEDBACK
+        ↓
+PLAN UPDATED AGAIN
+
+The farming plan must NOT be static.
+
+Whenever important weather conditions change, the system must reassess the current farming plan and generate updated recommendations.
+
+Example:
+
+Original plan:
+- Irrigation: Today
+- Fertilizer: Tomorrow
+- Harvest preparation: Friday
+
+New weather information:
+- Heavy rainfall expected
+
+AI response:
+- Irrigation postponed
+- Fertilizer postponed
+- Waterlogging risk increased
+- Pest/disease monitoring increased
+- Harvest recommendation recalculated
+
+Display a clear "Plan Updated" event in the UI.
+
+============================================================
+2. PRIMARY USER
+============================================================
+
+The primary user is a farmer.
+
+Design the application for a user who may not be technically advanced.
+
+The UI must therefore:
+- use simple language
+- avoid unnecessary technical terminology
+- use icons and visual indicators
+- show important information clearly
+- provide explanations for AI recommendations
+- support Tamil-friendly content architecture in the future
+- prioritize mobile responsiveness
+- make critical warnings highly visible
+
+Do NOT make the interface look like a generic SaaS admin dashboard.
+
+It should feel like a premium agricultural intelligence platform.
+
+============================================================
+3. VISUAL DESIGN DIRECTION
+============================================================
+
+Create a premium modern UI inspired by:
+- modern fintech dashboards
+- premium SaaS products
+- agricultural technology platforms
+- Google Material design principles
+- modern AI products
+- clean data visualization systems
+
+Visual identity:
+- premium
+- trustworthy
+- natural
+- intelligent
+- futuristic but practical
+- clean
+- minimal
+- highly polished
+
+Use an agriculture-inspired visual language.
+
+Primary palette:
+- deep forest green
+- emerald
+- soft green
+- off-white
+- charcoal
+- warm earth tones
+
+Use colors carefully.
+
+Do not make every component green.
+
+Use semantic colors:
+- green = healthy/safe
+- amber = warning
+- red = critical
+- blue = weather/water
+- purple = AI/intelligence
+
+Use:
+- rounded cards
+- subtle borders
+- soft shadows
+- glass effects only where appropriate
+- smooth transitions
+- excellent spacing
+- strong typography hierarchy
+- clean iconography
+
+Avoid:
+- excessive gradients
+- childish farming illustrations
+- overly saturated colors
+- clutter
+- excessive animations
+- generic bootstrap appearance
+- template-looking dashboards
+
+============================================================
+4. TECHNOLOGY STACK
+============================================================
+
+Preferred frontend:
+
+React
+TypeScript
+Vite
+
+Styling:
+
+Tailwind CSS
+
+UI components:
+
+shadcn/ui or an equivalent premium component system
+
+Charts:
+
+Recharts
+
+Maps:
+
+Leaflet or MapLibre
+
+Icons:
+
+Lucide React
+
+Backend:
+
+Python
+FastAPI
+
+Machine Learning:
+
+Python
+Pandas
+NumPy
+Scikit-learn
+XGBoost if appropriate
+
+Database:
+
+PostgreSQL / Supabase
+
+Authentication:
+
+Supabase Auth
+
+File storage:
+
+Supabase Storage
+
+Notifications:
+
+In-app notification system
+
+Optional:
+Email notifications
+Browser notifications
+
+Deployment-ready architecture:
+
+Frontend → Vercel-compatible
+Backend → Render/Railway/Fly-compatible
+Database → Supabase/PostgreSQL
+
+============================================================
+5. APPLICATION STRUCTURE
+============================================================
+
+Create the following main application sections:
+
+1. Landing Page
+2. Authentication
+3. Farmer Onboarding
+4. Main Dashboard
+5. My Farms
+6. Farm Details
+7. Weather Intelligence
+8. Yield Prediction
+9. Crop Health
+10. Soil Intelligence
+11. Irrigation Planner
+12. Fertilizer Planner
+13. Pest & Disease Risk
+14. Dynamic Farm Plan
+15. AI Agricultural Assistant
+16. Analytics
+17. Notifications
+18. Reports
+19. Settings
+20. Profile
+
+============================================================
+6. LANDING PAGE
+============================================================
+
+Create a premium landing page.
+
+Hero headline:
+
+"Grow Smarter. Predict Better. Farm with AI."
+
+Subheading:
+
+"AI-powered crop intelligence that combines farm data, soil conditions and changing weather to help farmers make better decisions."
+
+Hero CTA:
+
+"Start Your Farm"
+
+Secondary CTA:
+
+"Explore AI Features"
+
+Hero visual:
+
+Show a premium agriculture dashboard preview.
+
+Include:
+- weather
+- yield prediction
+- farm health
+- AI recommendation
+- dynamic plan
+
+Add a visual field/farm background, but keep readability high.
+
+============================================================
+7. AUTHENTICATION
+============================================================
+
+Create:
+
+Login
+Register
+Forgot Password
+OTP-ready architecture
+
+Registration fields:
+
+Name
+Mobile number
+Email
+Password
+Location
+District
+State
+Primary crop
+
+After registration:
+
+Launch farmer onboarding.
+
+============================================================
+8. FARMER ONBOARDING
+============================================================
+
+Create a multi-step onboarding experience.
+
+Step 1:
+Farmer information
+
+Step 2:
+Farm location
+
+Step 3:
+Farm size
+
+Step 4:
+Soil type
+
+Step 5:
+Primary crop
+
+Step 6:
+Crop variety
+
+Step 7:
+Current crop growth stage
+
+Step 8:
+Irrigation method
+
+Step 9:
+Optional soil test data
+
+Step 10:
+Notification preferences
+
+At completion:
+
+"Your AI Farm Profile is Ready"
+
+Then automatically generate the first farm dashboard.
+
+============================================================
+9. MAIN DASHBOARD
+============================================================
+
+The dashboard is the most important screen.
+
+Create a premium responsive dashboard.
+
+Header:
+
+Good morning, [Farmer Name]
+
+Location:
+[Village / District / State]
+
+Current date and time.
+
+Weather card:
+
+Current temperature
+Feels like
+Humidity
+Wind
+Rain probability
+Today's condition
+
+Weather source:
+
+"RMC / IMD"
+
+Clearly display the last update timestamp.
+
+============================================================
+10. DASHBOARD KPI CARDS
+============================================================
+
+Display:
+
+Expected Yield
+Crop Health
+Weather Risk
+Soil Moisture
+Irrigation Status
+Farm Health Score
+
+Example:
+
+Expected Yield:
+4.82 t/ha
+
+Prediction confidence:
+92%
+
+Crop Health:
+88%
+
+Weather Risk:
+Moderate
+
+Soil Moisture:
+34%
+
+Farm Health Score:
+91/100
+
+Do not present confidence as scientific certainty.
+
+Use explanatory labels such as:
+"Model confidence estimate."
+
+============================================================
+11. WEATHER INTELLIGENCE
+============================================================
+
+Create a dedicated Weather Intelligence page.
+
+Show:
+
+Today
+Tomorrow
+Next 3 days
+Next 7 days
+
+Display:
+
+Temperature
+Rainfall
+Humidity
+Wind speed
+Rain probability
+Weather condition
+Heat risk
+Heavy rainfall risk
+Storm risk if available
+
+Create beautiful charts.
+
+Temperature chart:
+Line chart
+
+Rainfall:
+Bar chart
+
+Humidity:
+Area/line chart
+
+============================================================
+12. RMC / IMD WEATHER INTEGRATION
+============================================================
+
+The application must be designed to consume official Indian weather information where available.
+
+Primary source:
+
+RMC / IMD
+
+Create a Weather Data Service layer.
+
+The architecture should support:
+
+Official API
+Official feed
+Official web data
+Configured backend ingestion
+
+Do NOT hardcode fake official data and label it as real.
+
+If a live API is unavailable during development:
+
+Use clearly labelled DEMO / SIMULATED weather data.
+
+Never represent simulated data as official RMC/IMD data.
+
+Store:
+
+source
+timestamp
+location
+forecast period
+temperature
+rainfall
+humidity
+wind
+warnings
+weather condition
+
+============================================================
+13. DAILY WEATHER UPDATE SYSTEM
+============================================================
+
+Implement an automated daily weather update architecture.
+
+Example schedule:
+
+Every morning:
+Fetch latest weather data.
+
+Also allow:
+
+"Refresh Weather Now"
+
+After retrieving new weather:
+
+Compare with previous forecast.
+
+Detect meaningful changes.
+
+Examples:
+
+Rainfall probability increased
+Temperature increased
+Heavy rain warning added
+Rainfall decreased
+Humidity increased
+Heatwave risk changed
+
+Create a weather-change event.
+
+============================================================
+14. WEATHER CHANGE DETECTION ENGINE
+============================================================
+
+Build a service:
+
+WeatherChangeDetector
+
+Inputs:
+
+previous forecast
+new forecast
+
+Compare:
+
+temperature
+rainfall
+rain probability
+humidity
+wind
+warnings
+extreme-weather indicators
+
+Example:
+
+Previous:
+Rain probability = 20%
+
+New:
+Rain probability = 75%
+
+Generate:
+
+"Significant rainfall forecast change"
+
+Severity:
+
+LOW
+MEDIUM
+HIGH
+CRITICAL
+
+Do not use arbitrary thresholds without documenting them.
+
+Keep thresholds configurable.
+
+============================================================
+15. DYNAMIC FARM PLAN
+============================================================
+
+This is a core feature.
+
+Create:
+
+Dynamic Farm Plan
+
+The plan contains:
+
+Today's tasks
+Tomorrow's tasks
+Upcoming tasks
+Weather-dependent tasks
+Irrigation
+Fertilization
+Pest monitoring
+Crop monitoring
+Harvest planning
+
+Each task should contain:
+
+Task
+Recommended date
+Reason
+Priority
+Status
+Weather dependency
+AI explanation
+
+============================================================
+16. AUTOMATIC PLAN RE-EVALUATION
+============================================================
+
+Whenever a meaningful weather change occurs:
+
+1. Retrieve current farm profile
+2. Retrieve crop information
+3. Retrieve current crop stage
+4. Retrieve soil data
+5. Retrieve existing plan
+6. Retrieve latest weather
+7. Compare previous weather
+8. Run AI decision engine
+9. Recalculate affected tasks
+10. Save updated plan
+11. Create change log
+12. Notify farmer
+
+Display:
+
+"AI Plan Updated"
+
+Example:
+
+Weather change detected:
+Heavy rainfall expected tomorrow.
+
+Updated actions:
+
+Irrigation:
+POSTPONED
+
+Fertilizer:
+DELAYED
+
+Pest monitoring:
+INCREASED
+
+Waterlogging risk:
+MODERATE
+
+============================================================
+17. PLAN CHANGE EXPLANATION
+============================================================
+
+Every AI-generated change must include:
+
+What changed?
+
+Why did it change?
+
+What should the farmer do?
+
+Example:
+
+"Rainfall probability increased from 25% to 78%.
+Because your soil moisture is already moderate, the AI recommends postponing irrigation."
+
+Use an expandable:
+
+"Why this recommendation?"
+
+section.
+
+============================================================
+18. YIELD PREDICTION
+============================================================
+
+Create a Yield Prediction page.
+
+Inputs:
+
+Crop
+Location
+Farm area
+Soil type
+Temperature
+Rainfall
+Humidity
+Soil moisture
+Nitrogen
+Phosphorus
+Potassium
+pH
+Planting date
+Crop stage
+
+Model:
+
+Start with Random Forest or XGBoost.
+
+Allow architecture for future ensemble models.
+
+Output:
+
+Predicted yield
+
+Unit:
+tons/hectare
+
+Also show:
+
+Prediction range
+Model confidence estimate
+Main influencing factors
+
+============================================================
+19. YIELD EXPLAINABILITY
+============================================================
+
+Show:
+
+"Factors influencing prediction"
+
+Example:
+
+Rainfall
+████████ 82%
+
+Soil moisture
+███████ 71%
+
+Temperature
+██████ 64%
+
+Nitrogen
+█████ 57%
+
+Avoid pretending these percentages are causal effects.
+
+Label them as:
+
+"Model feature importance / contribution indicator."
+
+============================================================
+20. CROP RECOMMENDATION
+============================================================
+
+Create a crop recommendation feature.
+
+Inputs:
+
+soil
+weather
+location
+season
+water availability
+farm size
+
+Output:
+
+Suitable crop options
+
+For each crop show:
+
+Expected yield range
+Water requirement
+Growing duration
+Risk indicators
+Suitability explanation
+
+Do not claim guaranteed yield.
+
+============================================================
+21. SOIL INTELLIGENCE
+============================================================
+
+Create Soil Intelligence.
+
+Display:
+
+pH
+Nitrogen
+Phosphorus
+Potassium
+Organic matter
+Moisture
+
+Use:
+
+healthy range visualization
+trend charts
+warnings
+
+Example:
+
+Nitrogen:
+Low
+
+AI recommendation:
+"Consider reviewing nitrogen availability before the next fertilizer application."
+
+Avoid making unsafe chemical recommendations without appropriate agricultural context.
+
+============================================================
+22. IRRIGATION AI
+============================================================
+
+Create an irrigation planner.
+
+Inputs:
+
+soil moisture
+crop
+crop stage
+temperature
+rain forecast
+rainfall
+soil type
+irrigation method
+
+Output:
+
+Irrigation recommendation
+
+Examples:
+
+Irrigate today
+Wait for rainfall
+Monitor soil moisture
+Reduce irrigation
+Increase irrigation
+
+Show:
+
+Reason
+Expected weather
+Current moisture
+Recommendation
+
+============================================================
+23. FERTILIZER AI
+============================================================
+
+Create a fertilizer planning system.
+
+Use soil data and crop requirements.
+
+Show:
+
+Nitrogen status
+Phosphorus status
+Potassium status
+Application timing
+General recommendation
+
+Do not give dangerous or overly precise chemical instructions unless supported by validated agronomic rules/data.
+
+============================================================
+24. PEST & DISEASE RISK
+============================================================
+
+Create:
+
+Pest & Disease Intelligence
+
+Inputs:
+
+crop
+temperature
+humidity
+rainfall
+crop stage
+
+Output:
+
+Risk level
+
+LOW
+MEDIUM
+HIGH
+
+Show:
+
+Risk reason
+Conditions contributing to risk
+Recommended monitoring action
+
+Add:
+
+"Upload Crop Image"
+
+Prepare architecture for future computer vision model.
+
+============================================================
+25. CROP IMAGE ANALYSIS
+============================================================
+
+Allow farmer to upload an image.
+
+Show:
+
+Image preview
+
+AI analysis result:
+
+Crop detected
+Possible stress indicators
+Possible disease category
+Confidence estimate
+
+IMPORTANT:
+
+Do not claim medical/agricultural certainty from an image.
+
+Use:
+
+"Possible issue detected"
+
+"Consider consulting an agricultural expert."
+
+Prepare architecture for CNN / computer vision model.
+
+============================================================
+26. FARM MAP
+============================================================
+
+Create interactive farm map.
+
+Use:
+
+Leaflet or MapLibre.
+
+Show:
+
+farm boundary
+farm location
+crop zones
+soil zones
+weather marker
+risk zones
+
+Allow future integration of satellite data.
+
+============================================================
+27. SATELLITE / NDVI READY ARCHITECTURE
+============================================================
+
+Create a module for future satellite imagery.
+
+Display architecture for:
+
+NDVI
+vegetation health
+crop stress
+field variation
+
+If actual satellite data is unavailable:
+
+Use clearly labelled simulated/demo data.
+
+Never claim fake satellite imagery is real.
+
+============================================================
+28. AI AGRICULTURAL ASSISTANT
+============================================================
+
+Create a conversational AI assistant.
+
+Name:
+
+"AgriAI Assistant"
+
+Farmer can ask:
+
+"What should I do today?"
+
+"Should I irrigate?"
+
+"Why was my plan changed?"
+
+"How is my crop doing?"
+
+"Why is yield prediction lower?"
+
+"What is today's weather risk?"
+
+The assistant should answer using:
+
+farm profile
+latest weather
+crop information
+soil data
+current farm plan
+historical predictions
+
+The assistant must not invent data.
+
+If data is missing:
+
+Clearly say:
+
+"I don't have that information yet."
+
+============================================================
+29. AI RESPONSE STYLE
+============================================================
+
+The assistant should use:
+
+simple language
+short paragraphs
+bullet points
+clear recommendations
+reason
+
+Example:
+
+"Today's rainfall probability is high, so irrigation has been postponed."
+
+Then:
+
+"Why?"
+
+"Your soil moisture is already adequate and rain is expected."
+
+============================================================
+30. NOTIFICATION CENTER
+============================================================
+
+Create notification system.
+
+Notification types:
+
+Weather update
+Weather warning
+Plan updated
+Irrigation reminder
+Fertilizer reminder
+Pest risk
+Yield update
+System notification
+
+Example:
+
+"⚠️ Weather Update"
+
+"Heavy rainfall probability increased."
+
+"Your irrigation plan has been automatically updated."
+
+============================================================
+31. NOTIFICATION PRIORITY
+============================================================
+
+Use:
+
+INFO
+LOW
+MEDIUM
+HIGH
+CRITICAL
+
+Do not spam users.
+
+Only send important notifications.
+
+Allow notification preferences.
+
+============================================================
+32. FARM HISTORY
+============================================================
+
+Create historical timeline.
+
+Show:
+
+weather changes
+plan changes
+yield predictions
+irrigation events
+fertilizer actions
+alerts
+crop health changes
+
+Example:
+
+21 Sep 2026
+09:10 AM
+
+Weather update detected.
+
+Rain probability:
+32% → 78%
+
+AI plan updated.
+
+============================================================
+33. ANALYTICS
+============================================================
+
+Create Analytics page.
+
+Charts:
+
+Yield trend
+Rainfall trend
+Temperature trend
+Soil moisture trend
+Irrigation trend
+Crop health trend
+Weather-risk trend
+
+Allow:
+
+7 days
+30 days
+90 days
+Season
+
+============================================================
+34. FARM PERFORMANCE
+============================================================
+
+Show:
+
+Expected yield
+Historical yield
+Input efficiency
+Water usage
+Risk events
+Plan adherence
+
+Use visual charts.
+
+Do not invent historical performance.
+
+If demo mode:
+
+Clearly label demo data.
+
+============================================================
+35. REPORT GENERATION
+============================================================
+
+Create downloadable report architecture.
+
+Report should include:
+
+Farmer
+Farm
+Crop
+Weather summary
+Yield prediction
+Soil status
+Irrigation plan
+Fertilizer plan
+Pest risk
+Plan changes
+AI recommendations
+
+Generate PDF-ready structure.
+
+============================================================
+36. FARM SWITCHER
+============================================================
+
+Support multiple farms.
+
+Example:
+
+Farm 01:
+Rice Field
+
+Farm 02:
+Maize Field
+
+Farm 03:
+Vegetable Field
+
+Each farm should have separate:
+
+weather context
+crop
+soil
+prediction
+plan
+alerts
+history
+
+============================================================
+37. RESPONSIVE DESIGN
+============================================================
+
+Desktop:
+
+Sidebar navigation
+Large dashboard
+Charts
+Maps
+
+Tablet:
+
+Collapsible sidebar
+Responsive cards
+
+Mobile:
+
+Bottom navigation or compact navigation
+
+Prioritize:
+
+Dashboard
+Weather
+Plan
+AI Assistant
+Alerts
+
+All tables must become mobile-friendly.
+
+No horizontal scrolling wherever possible.
+
+============================================================
+38. ACCESSIBILITY
+============================================================
+
+Implement:
+
+good contrast
+keyboard navigation
+ARIA labels
+large touch targets
+readable typography
+clear error messages
+
+Do not rely only on color to communicate status.
+
+Use:
+
+icons + labels + color.
+
+============================================================
+39. LOADING STATES
+============================================================
+
+Every asynchronous feature must have:
+
+skeleton loading
+progress indicators
+empty states
+error states
+
+Examples:
+
+"Updating weather..."
+
+"AI is analyzing your farm..."
+
+"Loading crop prediction..."
+
+============================================================
+40. ERROR HANDLING
+============================================================
+
+If weather service fails:
+
+Do NOT show fake current weather.
+
+Show:
+
+"Weather update unavailable."
+
+Show:
+
+Last successful update.
+
+If AI model fails:
+
+"Prediction temporarily unavailable."
+
+Allow retry.
+
+============================================================
+41. DEMO MODE
+============================================================
+
+Create a demo mode so the complete application can be demonstrated without external API credentials.
+
+Demo mode must be clearly labelled:
+
+"DEMO DATA"
+
+Use realistic sample data.
+
+Do NOT label simulated data as RMC/IMD live data.
+
+Create a toggle:
+
+Live Data
+Demo Data
+
+Only show Live Data when an actual configured source is available.
+
+============================================================
+42. DATA MODEL
+============================================================
+
+Create database entities:
+
+users
+farms
+farm_locations
+crops
+crop_cycles
+soil_records
+weather_records
+weather_forecasts
+weather_warnings
+weather_changes
+yield_predictions
+irrigation_plans
+fertilizer_plans
+pest_risk_records
+crop_health_records
+farm_plans
+farm_plan_tasks
+plan_change_logs
+notifications
+ai_conversations
+ai_messages
+uploaded_images
+reports
+
+Use proper relational structure.
+
+============================================================
+43. FARM PLAN DATA MODEL
+============================================================
+
+Each farm plan should contain:
+
+farm_id
+crop_id
+plan_date
+weather_snapshot_id
+status
+created_at
+updated_at
+
+Each task:
+
+task_id
+plan_id
+task_type
+title
+description
+scheduled_date
+priority
+status
+reason
+weather_dependency
+ai_generated
+created_at
+updated_at
+
+============================================================
+44. WEATHER DATA MODEL
+============================================================
+
+Store:
+
+source
+location
+latitude
+longitude
+observed_at
+forecast_for
+temperature
+rainfall
+rain_probability
+humidity
+wind_speed
+weather_condition
+warning_type
+warning_severity
+
+Never overwrite historical weather records.
+
+Store new observations as new records.
+
+============================================================
+45. WEATHER CHANGE LOG
+============================================================
+
+Store:
+
+previous_value
+new_value
+parameter
+detected_at
+severity
+affected_plan
+action_taken
+
+Example:
+
+parameter:
+rain_probability
+
+previous:
+25
+
+new:
+78
+
+severity:
+HIGH
+
+affected_plan:
+irrigation
+
+action:
+postponed
+
+============================================================
+46. AI ENGINE ARCHITECTURE
+============================================================
+
+Create modular AI services:
+
+YieldPredictionService
+WeatherAnalysisService
+WeatherChangeDetectionService
+CropRecommendationService
+IrrigationRecommendationService
+FertilizerRecommendationService
+PestRiskService
+CropImageAnalysisService
+FarmPlanOptimizer
+AgriAssistantService
+
+Each service should be independently testable.
+
+============================================================
+47. MODEL VERSIONING
+============================================================
+
+Every ML prediction should record:
+
+model_name
+model_version
+prediction_timestamp
+input_snapshot
+prediction
+confidence_estimate
+
+This allows future model improvement.
+
+============================================================
+48. AI SAFETY
+============================================================
+
+The system should clearly distinguish:
+
+official weather data
+AI predictions
+AI recommendations
+demo data
+historical data
+
+Never fabricate official warnings.
+
+Never claim guaranteed crop yield.
+
+Never claim guaranteed profit.
+
+Never make the farmer believe a prediction is certain.
+
+============================================================
+49. AI EXPLANATIONS
+============================================================
+
+Every important AI recommendation must answer:
+
+What happened?
+Why?
+What should I do?
+What data influenced this?
+
+Example:
+
+"Your irrigation plan changed because rainfall probability increased and soil moisture is currently adequate."
+
+============================================================
+50. WEATHER-TO-PLAN PIPELINE
+============================================================
+
+Implement this exact conceptual workflow:
+
+RMC/IMD WEATHER
+        ↓
+WEATHER INGESTION
+        ↓
+DATA VALIDATION
+        ↓
+WEATHER NORMALIZATION
+        ↓
+FORECAST COMPARISON
+        ↓
+CHANGE DETECTION
+        ↓
+FARM IMPACT ANALYSIS
+        ↓
+AI FARM PLAN OPTIMIZER
+        ↓
+UPDATED PLAN
+        ↓
+NOTIFICATION
+        ↓
+FARMER
+
+============================================================
+51. EXAMPLE AUTOMATION
+============================================================
+
+Scenario:
+
+Current crop:
+Rice
+
+Soil moisture:
+31%
+
+Current plan:
+Irrigation tomorrow
+
+Previous rain probability:
+20%
+
+New rain probability:
+82%
+
+AI detects significant change.
+
+Action:
+
+Irrigation:
+POSTPONE
+
+Reason:
+High rainfall probability.
+
+Pest monitoring:
+INCREASE
+
+Reason:
+Wet conditions may increase crop-health risk.
+
+Farmer notification:
+
+"Your farm plan was updated because rainfall probability increased significantly."
+
+============================================================
+52. DASHBOARD PLAN CARD
+============================================================
+
+Create a premium card:
+
+"Today's AI Farm Plan"
+
+Task 1:
+💧 Irrigation
+Status:
+Postponed
+
+Reason:
+Rain expected
+
+Task 2:
+🧪 Fertilizer
+Status:
+Scheduled
+
+Task 3:
+🌱 Crop Monitoring
+Status:
+Recommended
+
+Task 4:
+🐛 Pest Monitoring
+Status:
+Increased
+
+Button:
+
+"View Full Plan"
+
+============================================================
+53. PLAN CHANGE ANIMATION
+============================================================
+
+When the plan changes:
+
+Show subtle animation.
+
+Example:
+
+Weather icon
+↓
+AI processing
+↓
+Plan update
+
+Do not use excessive animations.
+
+Animation duration:
+short and smooth.
+
+============================================================
+54. WEATHER WARNING BANNER
+============================================================
+
+When important weather changes occur:
+
+Display top banner:
+
+"⚠️ Weather Alert"
+
+"Heavy rainfall is expected in your area."
+
+"Your irrigation plan has been updated."
+
+Button:
+
+"View Changes"
+
+============================================================
+55. AI ACTIVITY FEED
+============================================================
+
+Dashboard should show:
+
+"AI Activity"
+
+Examples:
+
+08:30
+Weather updated
+
+08:31
+Weather change detected
+
+08:31
+Irrigation plan recalculated
+
+08:32
+Farmer notified
+
+This makes the AI feel alive and transparent.
+
+============================================================
+56. FARM HEALTH SCORE
+============================================================
+
+Create a calculated Farm Health Score.
+
+Inputs can include:
+
+crop health
+soil status
+weather risk
+water status
+pest risk
+
+Display:
+
+91/100
+
+Breakdown:
+
+Soil:
+92
+
+Water:
+88
+
+Weather:
+79
+
+Crop:
+94
+
+Clearly label it as an application-derived indicator.
+
+Do not represent it as an official agricultural measurement.
+
+============================================================
+57. WEATHER RISK SCORE
+============================================================
+
+Create:
+
+Weather Risk
+
+Inputs:
+
+forecast changes
+rainfall
+temperature
+warnings
+wind
+humidity
+
+Display:
+
+LOW
+MODERATE
+HIGH
+
+Show the underlying reasons.
+
+============================================================
+58. FARMER-FRIENDLY LANGUAGE
+============================================================
+
+Do not display:
+
+"Feature vector anomaly detected."
+
+Instead:
+
+"Weather conditions changed significantly."
+
+Do not display:
+
+"Model inference probability."
+
+Instead:
+
+"Model confidence estimate."
+
+Use clear language everywhere.
+
+============================================================
+59. SEARCH AND FILTERS
+============================================================
+
+Add filters for:
+
+date
+crop
+farm
+risk
+task status
+weather event
+
+Add global search where useful.
+
+============================================================
+60. SETTINGS
+============================================================
+
+Settings should include:
+
+Profile
+Farm settings
+Notification settings
+Weather source
+Units
+Language
+Theme
+Data privacy
+AI preferences
+
+Units:
+
+Celsius
+mm
+hectares
+acres
+tons/hectare
+
+============================================================
+61. LANGUAGE ARCHITECTURE
+============================================================
+
+Build internationalization-ready architecture.
+
+Initially:
+
+English
+
+Prepare structure for:
+
+Tamil
+Hindi
+Telugu
+Kannada
+Malayalam
+
+Do not hardcode text throughout components.
+
+Use translation keys.
+
+============================================================
+62. API STRUCTURE
+============================================================
+
+Create FastAPI endpoints such as:
+
+GET /api/weather/current
+GET /api/weather/forecast
+GET /api/weather/history
+GET /api/weather/warnings
+
+POST /api/weather/refresh
+
+POST /api/weather/analyze-change
+
+POST /api/yield/predict
+
+POST /api/crop/recommend
+
+POST /api/irrigation/recommend
+
+POST /api/fertilizer/recommend
+
+POST /api/pest-risk/analyze
+
+GET /api/farms
+
+POST /api/farms
+
+GET /api/farms/{id}
+
+GET /api/farms/{id}/plan
+
+POST /api/farms/{id}/plan/recalculate
+
+GET /api/notifications
+
+POST /api/ai/chat
+
+============================================================
+63. FRONTEND API SERVICE
+============================================================
+
+Create a clean API client layer.
+
+Do not put fetch calls everywhere.
+
+Use:
+
+services/
+api/
+hooks/
+
+Create reusable hooks:
+
+useWeather()
+useFarm()
+useYieldPrediction()
+useFarmPlan()
+useNotifications()
+useAgriAssistant()
+
+============================================================
+64. COMPONENT ARCHITECTURE
+============================================================
+
+Create reusable components:
+
+WeatherCard
+ForecastChart
+YieldCard
+FarmHealthCard
+WeatherRiskCard
+AIRecommendationCard
+FarmPlanCard
+PlanTask
+AlertBanner
+NotificationItem
+SoilCard
+CropHealthCard
+IrrigationCard
+FertilizerCard
+PestRiskCard
+AIChat
+FarmMap
+AnalyticsChart
+MetricCard
+
+============================================================
+65. PROJECT STRUCTURE
+============================================================
+
+Use a clean structure such as:
+
+frontend/
+  src/
+    components/
+    pages/
+    layouts/
+    hooks/
+    services/
+    api/
+    types/
+    utils/
+    data/
+    assets/
+
+backend/
+  app/
+    api/
+    models/
+    schemas/
+    services/
+    ml/
+    weather/
+    recommendations/
+    database/
+    utils/
+
+ml/
+  datasets/
+  notebooks/
+  training/
+  models/
+  preprocessing/
+
+docs/
+
+tests/
+
+============================================================
+66. SAMPLE DATA
+============================================================
+
+Create realistic demo farms.
+
+Farm 1:
+Rice
+Tamil Nadu
+2.5 acres
+
+Farm 2:
+Maize
+Maharashtra
+5 acres
+
+Farm 3:
+Wheat
+Punjab
+4 acres
+
+Farm 4:
+Vegetables
+Karnataka
+1.8 acres
+
+Clearly mark these as demo farms.
+
+============================================================
+67. REAL DATA INTEGRATION
+============================================================
+
+Architect the system so that live data can be connected later.
+
+Weather service should be abstracted.
+
+Example:
+
+WeatherProvider interface
+
+Implement:
+
+DemoWeatherProvider
+
+IMD/RMCWeatherProvider
+
+Do not couple the frontend directly to the weather provider.
+
+============================================================
+68. DATABASE SECURITY
+============================================================
+
+Implement:
+
+authentication
+authorization
+row-level security where appropriate
+input validation
+API validation
+secure environment variables
+
+Never expose:
+
+API keys
+database service keys
+private credentials
+
+to the frontend.
+
+============================================================
+69. ENVIRONMENT VARIABLES
+============================================================
+
+Create:
+
+.env.example
+
+Include placeholders for:
+
+DATABASE_URL
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+WEATHER_API_KEY
+AI_API_KEY
+
+Never commit actual secrets.
+
+============================================================
+70. PERFORMANCE
+============================================================
+
+Optimize:
+
+API requests
+chart rendering
+image loading
+database queries
+weather refresh
+large farm datasets
+
+Use caching where appropriate.
+
+Do not repeatedly request weather data unnecessarily.
+
+============================================================
+71. MOBILE UX
+============================================================
+
+On mobile:
+
+Dashboard cards become vertical.
+
+Bottom navigation:
+
+Home
+Weather
+Plan
+AI
+Alerts
+
+Floating AI button:
+
+"Ask AgriAI"
+
+Ensure buttons are easy to tap.
+
+============================================================
+72. EMPTY STATES
+============================================================
+
+Example:
+
+No farm added.
+
+Message:
+
+"Add your first farm to start receiving AI recommendations."
+
+Button:
+
+"Add Farm"
+
+============================================================
+73. DEMO EXPERIENCE
+============================================================
+
+The first-time demo should feel complete.
+
+After entering demo mode:
+
+Automatically load:
+
+farm
+crop
+soil
+weather
+forecast
+yield prediction
+AI plan
+notifications
+
+Then demonstrate:
+
+Weather change
+↓
+AI detects change
+↓
+Plan updates
+↓
+Notification appears
+
+Provide a:
+
+"Simulate Weather Change"
+
+button for demonstration.
+
+============================================================
+74. WEATHER SIMULATION
+============================================================
+
+Create a development/demo control.
+
+Example:
+
+Current rainfall probability:
+25%
+
+Button:
+
+"Simulate Heavy Rain"
+
+System changes:
+
+rain probability:
+25% → 80%
+
+Then automatically:
+
+run change detector
+run farm impact analysis
+update plan
+create notification
+add activity log
+
+This feature is essential for demonstrating the dynamic AI workflow.
+
+============================================================
+75. AI DEMO MODE
+============================================================
+
+Create:
+
+"Run AI Analysis"
+
+Animation:
+
+Collecting farm data
+Analyzing weather
+Checking soil
+Evaluating crop
+Updating plan
+
+Then show:
+
+"Analysis Complete"
+
+============================================================
+76. FARM PLAN VERSIONING
+============================================================
+
+Every time the plan changes:
+
+Create a new plan version.
+
+Example:
+
+Plan v1
+Created 21 Sep 08:00
+
+Plan v2
+Updated 21 Sep 08:32
+
+Reason:
+Rainfall forecast changed
+
+Allow farmer to view previous versions.
+
+============================================================
+77. AUDIT TRAIL
+============================================================
+
+Create an AI decision log.
+
+Example:
+
+08:30
+Weather updated.
+
+08:31
+Rainfall change detected.
+
+08:31
+Farm impact analyzed.
+
+08:32
+Irrigation postponed.
+
+08:32
+Farmer notified.
+
+This increases transparency.
+
+============================================================
+78. ERROR STATES
+============================================================
+
+Create polished error UI.
+
+Example:
+
+"Unable to update weather."
+
+"Last successful update:
+Today, 07:45 AM."
+
+Buttons:
+
+Retry
+View Last Update
+
+============================================================
+79. SECURITY AND PRIVACY
+============================================================
+
+Treat farmer data as private.
+
+Do not expose one farmer's farm information to another user.
+
+Use authenticated API access.
+
+Validate all requests.
+
+============================================================
+80. TESTING
+============================================================
+
+Create tests for:
+
+weather ingestion
+weather comparison
+weather change detection
+yield prediction
+irrigation recommendation
+farm-plan update
+notification generation
+authentication
+API validation
+
+Create at least one complete end-to-end test:
+
+Weather changes
+→ AI analysis
+→ Plan update
+→ Notification
+
+============================================================
+81. AI MODEL DEVELOPMENT
+============================================================
+
+For the initial working version:
+
+Use a realistic sample agricultural dataset.
+
+Train:
+
+Random Forest Regressor
+
+Target:
+
+yield
+
+Features:
+
+rainfall
+temperature
+humidity
+soil moisture
+N
+P
+K
+pH
+crop
+location
+area
+crop stage
+
+Save the trained model.
+
+Create:
+
+model.pkl
+
+or equivalent production-safe model artifact.
+
+============================================================
+82. MODEL TRAINING PIPELINE
+============================================================
+
+Create:
+
+data preprocessing
+feature encoding
+train/test split
+model training
+evaluation
+model saving
+model loading
+prediction API
+
+Metrics:
+
+MAE
+RMSE
+R²
+
+Display metrics only in the developer/model information area.
+
+Do not confuse model evaluation metrics with prediction confidence.
+
+============================================================
+83. FUTURE MODEL SUPPORT
+============================================================
+
+Design architecture for:
+
+Random Forest
+XGBoost
+Gradient Boosting
+Neural Networks
+LSTM/Temporal models
+CNN image classification
+Ensemble models
+
+The system should allow model replacement without rewriting the frontend.
+
+============================================================
+84. AI RECOMMENDATION ENGINE
+============================================================
+
+Create a rule + ML hybrid recommendation layer.
+
+Use:
+
+ML prediction
++
+weather conditions
++
+soil conditions
++
+crop stage
++
+configured agronomic rules
+
+Then generate recommendation.
+
+Do not make the LLM responsible for numerical agricultural calculations.
+
+Use deterministic services for critical calculations.
+
+Use the LLM mainly for:
+
+explanation
+conversation
+summarization
+farmer-friendly wording
+
+============================================================
+85. WEATHER PRIORITY
+============================================================
+
+Weather warnings must override routine plans where appropriate.
+
+Example:
+
+Normal plan:
+Irrigation today.
+
+Severe rainfall warning:
+Suspend routine irrigation recommendation.
+
+The system should clearly explain that the plan was changed because of the weather warning.
+
+============================================================
+86. WEATHER DATA FRESHNESS
+============================================================
+
+Always display:
+
+Last updated
+
+Example:
+
+"Weather updated 12 minutes ago."
+
+For stale data:
+
+"Weather data may be outdated."
+
+Do not silently display stale data as current.
+
+============================================================
+87. DATA SOURCE LABELS
+============================================================
+
+Every weather card should indicate its source.
+
+Examples:
+
+RMC/IMD
+Demo Data
+Other configured provider
+
+Never display:
+
+"Official RMC Data"
+
+unless the data actually came from the configured official source.
+
+============================================================
+88. UI MICROINTERACTIONS
+============================================================
+
+Use subtle:
+
+hover states
+card transitions
+button feedback
+chart tooltips
+toast notifications
+progress states
+
+Avoid excessive animations.
+
+============================================================
+89. TOAST NOTIFICATIONS
+============================================================
+
+Example:
+
+"Farm plan updated"
+
+"Rainfall forecast changed."
+
+"Irrigation recommendation postponed."
+
+Use toast notifications only for meaningful events.
+
+============================================================
+90. DASHBOARD PERSONALIZATION
+============================================================
+
+Dashboard should change based on:
+
+crop
+farm
+location
+current crop stage
+weather
+risk
+
+A rice farmer should not see irrelevant maize-specific information.
+
+============================================================
+91. FARM SWITCHING
+============================================================
+
+Top navigation:
+
+Farm:
+[Green Valley Rice Farm ▼]
+
+Dropdown:
+
+Green Valley Rice Farm
+North Field
+Vegetable Plot
+
+Changing farm should update:
+
+weather
+crop
+soil
+yield
+plan
+alerts
+
+============================================================
+92. CROP CYCLE
+============================================================
+
+Track:
+
+Sowing
+Germination
+Vegetative
+Flowering
+Fruit/Grain development
+Maturity
+Harvest
+
+Use crop-specific stage names where data supports them.
+
+============================================================
+93. CROP TIMELINE
+============================================================
+
+Show a horizontal or vertical timeline.
+
+Example:
+
+Sowing
+✓
+
+Growth
+✓
+
+Flowering
+Current
+
+Harvest
+Upcoming
+
+Connect AI recommendations to the current stage.
+
+============================================================
+94. WEATHER-CROP CONNECTION
+============================================================
+
+Show:
+
+"How weather affects your crop"
+
+Example:
+
+Temperature:
+High
+
+Impact:
+Moderate heat stress risk
+
+Rainfall:
+High
+
+Impact:
+Reduced irrigation requirement
+
+Humidity:
+High
+
+Impact:
+Increase crop monitoring
+
+============================================================
+95. FARM PLAN PRIORITY
+============================================================
+
+Each task should show:
+
+HIGH
+MEDIUM
+LOW
+
+Use icon + text.
+
+============================================================
+96. AI EXPLANATION PANEL
+============================================================
+
+Create a reusable:
+
+"AI Explanation"
+
+panel.
+
+Sections:
+
+Data considered
+What changed
+AI interpretation
+Recommendation
+Expected impact
+Limitations
+
+============================================================
+97. TRUST DESIGN
+============================================================
+
+Show transparency.
+
+Example:
+
+"Based on weather forecast updated at 08:30 AM."
+
+"Recommendation generated using your farm profile and current weather."
+
+This builds farmer trust.
+
+============================================================
+98. NO FALSE PRECISION
+============================================================
+
+Avoid:
+
+"Your crop will produce exactly 4.82 tons."
+
+Instead:
+
+"Estimated yield: approximately 4.5–5.0 tons/ha."
+
+If the model only produces a point estimate, explain that it is an estimate.
+
+============================================================
+99. PROFIT ESTIMATION
+============================================================
+
+Optional module:
+
+Estimated revenue
+Estimated input cost
+Estimated margin
+
+Clearly label assumptions:
+
+market price
+input price
+farm area
+
+Never claim guaranteed profit.
+
+============================================================
+100. MARKET DATA READY
+============================================================
+
+Prepare architecture for:
+
+local market prices
+crop demand
+harvest timing
+
+This can later help optimize harvest scheduling.
+
+============================================================
+101. LOGISTICS OPTIMIZATION
+============================================================
+
+Prepare future architecture for:
+
+harvest date
+storage
+transport
+market demand
+
+The uploaded project concept includes logistics optimization as a future impact area.
+
+============================================================
+102. ADMIN PANEL
+============================================================
+
+Create an optional admin dashboard.
+
+Admin can see:
+
+registered farmers
+farms
+weather ingestion status
+model status
+system health
+notifications
+data freshness
+
+Do not expose private farmer information unnecessarily.
+
+============================================================
+103. MODEL MONITORING
+============================================================
+
+Developer/admin view:
+
+model version
+last trained date
+evaluation metrics
+prediction count
+errors
+
+============================================================
+104. WEATHER SERVICE MONITORING
+============================================================
+
+Show:
+
+last successful weather fetch
+source
+status
+latency
+data freshness
+errors
+
+============================================================
+105. API HEALTH
+============================================================
+
+Create:
+
+/health
+
+Return:
+
+backend status
+database status
+weather service status
+ML model status
+
+============================================================
+106. RESPONSIVE TABLES
+============================================================
+
+On desktop:
+
+Use tables.
+
+On mobile:
+
+Convert table rows into cards.
+
+Do not force horizontal scrolling unless absolutely necessary.
+
+============================================================
+107. CHART DESIGN
+============================================================
+
+Charts must have:
+
+clear labels
+units
+tooltips
+legends
+responsive sizing
+
+Do not create charts merely for decoration.
+
+Every chart should answer a useful question.
+
+============================================================
+108. EMPTY DATA HANDLING
+============================================================
+
+If soil data is missing:
+
+"Add soil test data to improve recommendations."
+
+If rainfall data is missing:
+
+"Weather rainfall information unavailable."
+
+Do not create fake values.
+
+============================================================
+109. USER FEEDBACK
+============================================================
+
+After recommendations:
+
+Ask:
+
+"Was this recommendation useful?"
+
+Buttons:
+
+👍 Yes
+👎 No
+
+Store feedback.
+
+Use it for future product improvement.
+
+============================================================
+110. FARMER FEEDBACK LOOP
+============================================================
+
+The system should support:
+
+AI recommendation
+↓
+Farmer action
+↓
+Farmer feedback
+↓
+Observed result
+↓
+Future recommendation improvement
+
+This represents the closed-loop agricultural intelligence concept.
+
+============================================================
+111. ACCESSIBILITY LANGUAGE
+============================================================
+
+Use plain English.
+
+Example:
+
+Instead of:
+"Precipitation anomaly"
+
+Use:
+"Rainfall is different from the recent forecast."
+
+============================================================
+112. DESIGN SYSTEM
+============================================================
+
+Create design tokens for:
+
+spacing
+radius
+typography
+shadows
+colors
+breakpoints
+
+Use reusable components.
+
+Do not duplicate styles unnecessarily.
+
+============================================================
+113. TYPOGRAPHY
+============================================================
+
+Use a modern font such as:
+
+Inter
+Manrope
+Plus Jakarta Sans
+
+Use:
+
+large dashboard numbers
+medium section headers
+comfortable body text
+
+============================================================
+114. SIDEBAR
+============================================================
+
+Desktop sidebar:
+
+Overview
+My Farms
+Weather
+AI Yield
+Crop Health
+Soil
+Irrigation
+Fertilizer
+Pest Risk
+Farm Plan
+Analytics
+AI Assistant
+Notifications
+Reports
+Settings
+
+Highlight current page.
+
+============================================================
+115. MOBILE NAVIGATION
+============================================================
+
+Mobile:
+
+Home
+Weather
+Plan
+AI
+More
+
+============================================================
+116. HEADER
+============================================================
+
+Header:
+
+Farm selector
+Weather status
+Notifications
+Profile
+
+Show:
+
+"Weather synced"
+
+when successful.
+
+============================================================
+117. AI STATUS
+============================================================
+
+Show subtle AI status indicator:
+
+"AI monitoring active"
+
+Do not imply human-like consciousness.
+
+============================================================
+118. FARM PLAN CALENDAR
+============================================================
+
+Create calendar view.
+
+Show:
+
+Irrigation
+Fertilizer
+Monitoring
+Harvest
+Weather events
+
+Allow day/week/month views.
+
+============================================================
+119. WEATHER OVERLAY
+============================================================
+
+Calendar should allow:
+
+Weather overlay
+
+So farmer can see:
+
+rain forecast
+planned irrigation
+weather warnings
+
+together.
+
+============================================================
+120. FARM RISK MAP
+============================================================
+
+Show risk areas:
+
+water stress
+heat stress
+rainfall risk
+pest risk
+
+Use clear legends.
+
+============================================================
+121. IMAGE UPLOAD UX
+============================================================
+
+Drag/drop or mobile camera upload.
+
+Show:
+
+Upload image
+Analyzing...
+Result
+
+Allow:
+
+Retake
+Upload another
+
+============================================================
+122. AI CHAT CONTEXT
+============================================================
+
+AI assistant should know current:
+
+selected farm
+crop
+crop stage
+weather
+soil
+plan
+alerts
+
+But only retrieve data belonging to the authenticated farmer.
+
+============================================================
+123. AI CHAT UI
+============================================================
+
+Design similar to a premium AI assistant.
+
+Messages:
+
+Farmer
+AgriAI
+
+Suggested prompts:
+
+"What should I do today?"
+"Why did my plan change?"
+"How is my crop?"
+"Should I irrigate?"
+
+============================================================
+124. AI RESPONSE SOURCES
+============================================================
+
+When relevant, show:
+
+Based on:
+Weather update
+Soil record
+Farm profile
+Crop stage
+
+Do not fabricate citations.
+
+============================================================
+125. NOTIFICATION DETAIL
+============================================================
+
+Click notification:
+
+Show:
+
+event
+timestamp
+data change
+affected task
+AI explanation
+action
+
+============================================================
+126. PLAN HISTORY
+============================================================
+
+Show:
+
+Plan v1
+Plan v2
+Plan v3
+
+Allow comparison:
+
+What changed?
+
+============================================================
+127. CHANGE COMPARISON
+============================================================
+
+Example:
+
+Rain probability:
+25% → 82%
+
+Irrigation:
+Scheduled → Postponed
+
+Pest monitoring:
+Normal → Increased
+
+Use visual before/after indicators.
+
+============================================================
+128. WEATHER DATA REFRESH
+============================================================
+
+Add:
+
+Refresh button
+
+Show:
+
+Refreshing weather...
+
+Then:
+
+Updated just now
+
+Prevent duplicate refresh requests.
+
+============================================================
+129. DAILY REPORT
+============================================================
+
+Generate daily summary:
+
+Weather
+Farm condition
+AI plan
+Alerts
+Yield estimate
+Actions
+
+Example title:
+
+"Daily AI Farm Briefing"
+
+============================================================
+130. MORNING BRIEFING
+============================================================
+
+Dashboard can display:
+
+"Good morning, Aravinth."
+
+If using demo user data, use:
+
+"Good morning, Farmer."
+
+Then:
+
+"Here is today's farm briefing."
+
+============================================================
+131. FARMER ACTION CONFIRMATION
+============================================================
+
+When farmer marks a task complete:
+
+Show:
+
+Completed
+
+Record timestamp.
+
+Allow:
+
+Undo
+
+============================================================
+132. TASK FEEDBACK
+============================================================
+
+After completion:
+
+Optional:
+
+"Did you follow this recommendation?"
+
+Yes
+Partially
+No
+
+============================================================
+133. FARM PERFORMANCE SCORE
+============================================================
+
+Create:
+
+AI Farm Performance
+
+Use indicators:
+
+plan adherence
+water efficiency
+crop health
+weather preparedness
+
+Clearly label this as an app-generated indicator.
+
+============================================================
+134. MODEL INPUT QUALITY
+============================================================
+
+If data quality is poor:
+
+Show:
+
+"Prediction quality may be limited because soil data is missing."
+
+This is important for AI transparency.
+
+============================================================
+135. DATA QUALITY SCORE
+============================================================
+
+Show:
+
+Data completeness:
+
+82%
+
+Missing:
+
+soil nitrogen
+recent crop image
+
+Then:
+
+"Add missing data to improve analysis."
+
+============================================================
+136. WEATHER CONFIDENCE
+============================================================
+
+Do not create fake weather confidence.
+
+If provider supplies confidence/probability:
+
+display it.
+
+Otherwise:
+
+show probability fields from the forecast itself.
+
+============================================================
+137. FARMER TRUST
+============================================================
+
+Always explain recommendations.
+
+Never simply display:
+
+"IRRIGATE"
+
+Instead:
+
+"Irrigation may be needed because soil moisture is low and little rainfall is forecast."
+
+============================================================
+138. ERROR RECOVERY
+============================================================
+
+If model prediction fails:
+
+Fallback:
+
+display last valid prediction with timestamp.
+
+Clearly mark:
+
+"Last available prediction."
+
+============================================================
+139. OFFLINE-READY ARCHITECTURE
+============================================================
+
+Prepare frontend for limited connectivity.
+
+Cache:
+
+last farm plan
+last weather
+last alerts
+
+Show:
+
+"Last synced..."
+
+Do not present cached information as live.
+
+============================================================
+140. EDGE / LOW CONNECTIVITY READY
+============================================================
+
+Structure services so future deployment can support:
+
+local inference
+offline recommendations
+delayed synchronization
+
+This aligns with the project's future focus on edge AI and low-connectivity agricultural solutions.
+
+============================================================
+141. FARM LOCATION
+============================================================
+
+Use location carefully.
+
+Allow farmer to:
+
+search location
+select district
+select farm location on map
+
+Do not automatically expose precise location publicly.
+
+============================================================
+142. FARM BOUNDARY
+============================================================
+
+Allow future:
+
+draw farm boundary
+save polygon
+calculate area
+
+For demo:
+
+use predefined sample farm boundaries.
+
+============================================================
+143. WEATHER LOCATION MATCHING
+============================================================
+
+Weather data must correspond to:
+
+selected farm location
+
+Do not show weather from another location without explicitly identifying it.
+
+============================================================
+144. MULTI-CROP SUPPORT
+============================================================
+
+Prepare crop configuration.
+
+Each crop can define:
+
+growth stages
+water sensitivity
+weather sensitivity
+soil preferences
+risk rules
+
+============================================================
+145. CONFIGURATION
+============================================================
+
+Store configurable rules in backend.
+
+Do not hardcode all agricultural logic in React.
+
+============================================================
+146. AI DECISION ENGINE
+============================================================
+
+Create:
+
+FarmDecisionEngine
+
+Inputs:
+
+weather
+soil
+crop
+stage
+historical data
+current plan
+
+Outputs:
+
+recommendations
+priority
+reason
+affected tasks
+
+============================================================
+147. DECISION ENGINE EXAMPLE
+============================================================
+
+Input:
+
+rain_probability = 80
+soil_moisture = 35
+crop = rice
+stage = flowering
+
+Output:
+
+irrigation:
+postpone
+
+pest_monitoring:
+increase
+
+weather_risk:
+high
+
+============================================================
+148. PLAN OPTIMIZATION
+============================================================
+
+Optimize for:
+
+water efficiency
+input efficiency
+crop health
+weather resilience
+
+Do not optimize solely for yield.
+
+============================================================
+149. SUSTAINABILITY
+============================================================
+
+Dashboard can show:
+
+Water saved
+Input efficiency
+Risk avoided
+
+Only calculate these if supported by actual data.
+
+============================================================
+150. FARMER SUMMARY
+============================================================
+
+Create a simple summary:
+
+"Today's priorities"
+
+1. Monitor rainfall
+2. Review irrigation update
+3. Check crop health
+
+Keep this actionable.
+
+============================================================
+151. AI INSIGHT CARDS
+============================================================
+
+Examples:
+
+"Rainfall expected"
+"Water stress decreasing"
+"Crop health stable"
+"Pest risk increasing"
+
+Each card:
+
+icon
+headline
+short explanation
+action
+
+============================================================
+152. COLOR ACCESSIBILITY
+============================================================
+
+Do not rely only on red/green.
+
+Use:
+
+icons
+labels
+patterns
+text
+
+============================================================
+153. DARK MODE
+============================================================
+
+Implement dark mode.
+
+Ensure charts and maps remain readable.
+
+============================================================
+154. ANIMATIONS
+============================================================
+
+Use Framer Motion if needed.
+
+Use subtle transitions.
+
+Do not animate every card.
+
+============================================================
+155. PERFORMANCE TARGET
+============================================================
+
+Aim for:
+
+fast first load
+lazy loading
+code splitting
+optimized assets
+efficient API calls
+
+============================================================
+156. CODE QUALITY
+============================================================
+
+Use:
+
+TypeScript strict mode
+
+Reusable functions
+
+Clear naming
+
+Comments only where useful
+
+No giant components
+
+No duplicated logic
+
+No hardcoded secrets
+
+============================================================
+157. BACKEND QUALITY
+============================================================
+
+Use:
+
+Pydantic schemas
+service layer
+repository/database layer
+exception handling
+logging
+validation
+
+============================================================
+158. API DOCUMENTATION
+============================================================
+
+FastAPI should automatically expose:
+
+Swagger/OpenAPI
+
+Make endpoint descriptions clear.
+
+============================================================
+159. LOGGING
+============================================================
+
+Log:
+
+weather updates
+AI plan changes
+model errors
+API errors
+
+Do not log private sensitive information unnecessarily.
+
+============================================================
+160. DATABASE MIGRATIONS
+============================================================
+
+Use a proper migration strategy.
+
+Do not manually create random database tables during runtime.
+
+============================================================
+161. SEED DATA
+============================================================
+
+Create seed script.
+
+Seed:
+
+demo farmer
+demo farms
+demo weather
+demo crop
+demo soil
+demo plans
+demo notifications
+
+Clearly label seeded data.
+
+============================================================
+162. TEST ACCOUNT
+============================================================
+
+Create development/demo account.
+
+Use safe placeholder credentials.
+
+Do not include real passwords.
+
+============================================================
+163. README
+============================================================
+
+Create comprehensive README containing:
+
+Project overview
+Features
+Architecture
+Tech stack
+Setup
+Environment variables
+Database setup
+ML training
+Running frontend
+Running backend
+Demo mode
+Testing
+Deployment
+
+============================================================
+164. ARCHITECTURE DOCUMENT
+============================================================
+
+Create:
+
+docs/architecture.md
+
+Explain:
+
+frontend
+backend
+database
+ML
+weather ingestion
+AI recommendation engine
+farm-plan optimizer
+notification system
+
+============================================================
+165. AI PIPELINE DOCUMENT
+============================================================
+
+Create:
+
+docs/ai-pipeline.md
+
+Explain:
+
+input
+preprocessing
+model
+prediction
+recommendation
+plan update
+
+============================================================
+166. WEATHER PIPELINE DOCUMENT
+============================================================
+
+Create:
+
+docs/weather-pipeline.md
+
+Explain:
+
+source
+ingestion
+validation
+storage
+comparison
+change detection
+plan update
+
+============================================================
+167. API DOCUMENTATION
+============================================================
+
+Create:
+
+docs/api.md
+
+List:
+
+endpoint
+method
+request
+response
+authentication
+errors
+
+============================================================
+168. UX FLOW
+============================================================
+
+Ensure the complete user journey is:
+
+Landing
+↓
+Register
+↓
+Onboarding
+↓
+Add Farm
+↓
+Weather Sync
+↓
+AI Analysis
+↓
+Dashboard
+↓
+Daily Plan
+↓
+Weather Change
+↓
+AI Recalculation
+↓
+Notification
+↓
+Farmer Action
+↓
+Feedback
+↓
+Future Plan Improvement
+
+============================================================
+169. DEMO PRESENTATION FLOW
+============================================================
+
+Build a presentation-ready scenario.
+
+Start:
+
+Farmer dashboard.
+
+Show:
+
+Today's weather.
+
+Then click:
+
+"Simulate Weather Change"
+
+System:
+
+Rain probability increases.
+
+Then:
+
+AI detects change.
+
+Then:
+
+Farm plan changes.
+
+Then:
+
+Notification appears.
+
+Then:
+
+AI Assistant explains why.
+
+This should be visually impressive and easy to demonstrate.
+
+============================================================
+170. DEMO SCENARIO
+============================================================
+
+Use:
+
+Crop:
+Rice
+
+Farm:
+2.5 acres
+
+Initial weather:
+Rain probability 20%
+
+Initial plan:
+Irrigation tomorrow
+
+Simulated update:
+Rain probability 80%
+
+Result:
+
+Irrigation postponed.
+
+Pest monitoring increased.
+
+Weather risk changed.
+
+Notification generated.
+
+Plan version incremented.
+
+Activity log updated.
+
+============================================================
+171. AI DASHBOARD STATE
+============================================================
+
+Dashboard should visually communicate:
+
+AI is monitoring.
+
+Weather is current.
+
+Plan is adaptive.
+
+Farmer is informed.
+
+Use:
+
+"Monitoring Active"
+
+"Last analyzed..."
+
+"Plan updated..."
+
+============================================================
+172. NO STATIC MOCKUP
+============================================================
+
+Do not build only visual cards.
+
+Buttons must work.
+
+Forms must work.
+
+Navigation must work.
+
+Demo simulation must work.
+
+Weather refresh must work in demo mode.
+
+Plan recalculation must work.
+
+Notifications must work.
+
+AI chat must work with configured data.
+
+============================================================
+173. NO PLACEHOLDER BUTTONS
+============================================================
+
+Avoid buttons that do nothing.
+
+If a feature is not implemented:
+
+hide it or label it:
+
+"Coming soon"
+
+Do not create fake functionality.
+
+============================================================
+174. REALISTIC AI BEHAVIOR
+============================================================
+
+AI outputs should be deterministic where required.
+
+For demo mode:
+
+Use deterministic sample logic.
+
+For real model:
+
+Use actual trained model.
+
+Do not generate random numbers every time.
+
+============================================================
+175. DATA CONSISTENCY
+============================================================
+
+If dashboard says:
+
+soil moisture = 31%
+
+then AI recommendation must use:
+
+31%
+
+Do not show conflicting values in different pages.
+
+============================================================
+176. STATE MANAGEMENT
+============================================================
+
+Use a suitable state-management approach.
+
+Keep:
+
+selected farm
+weather
+notifications
+plan
+user
+
+consistent across the application.
+
+============================================================
+177. REAL-TIME READY
+============================================================
+
+Prepare architecture for future:
+
+WebSockets
+Supabase Realtime
+server-sent events
+
+For:
+
+weather updates
+plan changes
+notifications
+
+============================================================
+178. NOTIFICATION REAL-TIME FLOW
+============================================================
+
+When plan updates:
+
+Backend creates notification.
+
+Frontend receives notification.
+
+Show toast.
+
+Update notification badge.
+
+Update activity feed.
+
+============================================================
+179. AI PLAN UPDATE EVENT
+============================================================
+
+Create event:
+
+FARM_PLAN_UPDATED
+
+Payload:
+
+farm_id
+old_plan_version
+new_plan_version
+reason
+affected_tasks
+timestamp
+
+============================================================
+180. WEATHER CHANGE EVENT
+============================================================
+
+Create:
+
+WEATHER_CHANGE_DETECTED
+
+Payload:
+
+farm_id
+parameter
+old_value
+new_value
+severity
+timestamp
+
+============================================================
+181. DATA VALIDATION
+============================================================
+
+Validate:
+
+temperature ranges
+humidity
+rainfall
+soil pH
+NPK
+farm area
+
+Reject invalid data.
+
+============================================================
+182. UNIT CONVERSION
+============================================================
+
+Allow:
+
+acres ↔ hectares
+
+Celsius ↔ Fahrenheit
+
+mm ↔ appropriate display units
+
+Store canonical units internally.
+
+============================================================
+183. DATE/TIME
+============================================================
+
+Use timezone-aware timestamps.
+
+Default:
+
+Asia/Kolkata
+
+Display local farmer time.
+
+============================================================
+184. LOCATION
+============================================================
+
+Use:
+
+latitude
+longitude
+district
+state
+
+Keep location data private.
+
+============================================================
+185. SECURITY
+============================================================
+
+Implement:
+
+JWT/session authentication
+protected routes
+backend authorization
+input sanitization
+rate limiting where appropriate
+
+============================================================
+186. IMAGE SECURITY
+============================================================
+
+Validate uploaded image:
+
+file type
+size
+dimensions
+
+Do not execute uploaded files.
+
+============================================================
+187. DATABASE INDEXING
+============================================================
+
+Index:
+
+user_id
+farm_id
+timestamp
+forecast_for
+crop_id
+
+Optimize historical queries.
+
+============================================================
+188. AI RESPONSE CACHING
+============================================================
+
+Cache repeated expensive analysis when safe.
+
+Invalidate cache when:
+
+weather changes
+soil changes
+crop stage changes
+farm data changes
+
+============================================================
+189. WEATHER CACHE
+============================================================
+
+Cache current forecast for a configurable duration.
+
+Do not request provider repeatedly.
+
+============================================================
+190. PLAN INVALIDATION
+============================================================
+
+When meaningful weather changes occur:
+
+invalidate affected plan tasks
+
+recalculate only affected recommendations when possible.
+
+============================================================
+191. EXPLANATION QUALITY
+============================================================
+
+AI explanation must be:
+
+short
+clear
+data-based
+actionable
+
+Avoid:
+
+long technical paragraphs.
+
+============================================================
+192. FARMER ALERT PRIORITY
+============================================================
+
+Critical warnings should be immediately visible.
+
+Example:
+
+"Severe Weather Risk"
+
+Do not bury important warnings inside analytics.
+
+============================================================
+193. DASHBOARD TOP PRIORITY
+============================================================
+
+Above the fold show:
+
+weather
+alerts
+today's plan
+yield
+farm health
+
+============================================================
+194. SECONDARY INFORMATION
+============================================================
+
+Below the fold:
+
+charts
+history
+analytics
+model information
+
+============================================================
+195. PREMIUM UI DETAILS
+============================================================
+
+Add:
+
+subtle gradients
+soft shadows
+premium cards
+clean whitespace
+micro animations
+professional icons
+excellent chart styling
+
+But keep the interface practical.
+
+============================================================
+196. FINAL PRODUCT FEEL
+============================================================
+
+The final application should feel like:
+
+"Google-quality AI agriculture platform"
+
+not:
+
+"college CRUD project"
+
+It must look polished enough for:
+
+college project demonstration
+hackathon
+portfolio
+startup prototype
+investor-style demo
+
+============================================================
+197. BUILD PRIORITY
+============================================================
+
+Build in this order:
+
+PHASE 1
+UI foundation
+
+PHASE 2
+Authentication + database
+
+PHASE 3
+Farm management
+
+PHASE 4
+Weather system
+
+PHASE 5
+Weather change detection
+
+PHASE 6
+Yield prediction
+
+PHASE 7
+AI recommendations
+
+PHASE 8
+Dynamic farm plan
+
+PHASE 9
+Notifications
+
+PHASE 10
+AI assistant
+
+PHASE 11
+Analytics
+
+PHASE 12
+Demo simulation
+
+PHASE 13
+Testing
+
+PHASE 14
+Deployment preparation
+
+============================================================
+198. IMPORTANT IMPLEMENTATION RULE
+============================================================
+
+Do not attempt to build everything as one giant component.
+
+Build modularly.
+
+After each major feature:
+
+test it
+verify it
+fix errors
+continue
+
+============================================================
+199. FIRST IMPLEMENTATION
+============================================================
+
+Start by creating:
+
+1. Project structure
+2. React + TypeScript frontend
+3. Tailwind
+4. Premium design system
+5. Dashboard
+6. Sidebar
+7. Header
+8. Farm selector
+9. Weather card
+10. AI plan card
+11. Yield card
+12. Notification system
+13. Responsive mobile layout
+
+Then build backend.
+
+============================================================
+200. SECOND IMPLEMENTATION
+============================================================
+
+Build:
+
+FastAPI
+database
+farm APIs
+weather APIs
+weather storage
+weather-change detector
+plan optimizer
+
+============================================================
+201. THIRD IMPLEMENTATION
+============================================================
+
+Build:
+
+Random Forest yield model
+prediction endpoint
+recommendation engine
+dynamic plan
+
+============================================================
+202. FOURTH IMPLEMENTATION
+============================================================
+
+Build:
+
+AI assistant
+image upload
+crop-health architecture
+analytics
+reports
+
+============================================================
+203. FIFTH IMPLEMENTATION
+============================================================
+
+Build:
+
+demo simulation
+weather-change simulation
+end-to-end testing
+polish
+deployment readiness
+
+============================================================
+204. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+The project is considered complete only when:
+
+✓ User can register/login
+✓ User can add a farm
+✓ User can select a crop
+✓ User can see weather
+✓ Weather has a source label
+✓ Weather has a timestamp
+✓ Yield prediction works
+✓ AI recommendation works
+✓ Dynamic farm plan works
+✓ Weather change detection works
+✓ Plan automatically updates after meaningful weather change
+✓ Notification is generated
+✓ Farmer can see why plan changed
+✓ AI assistant understands current farm context
+✓ Mobile UI works
+✓ Desktop UI works
+✓ Demo mode works
+✓ Simulated weather change works
+✓ No fake official weather data is presented as live
+✓ No API keys are exposed
+✓ Errors are handled
+✓ Loading states exist
+✓ Empty states exist
+✓ README exists
+✓ Architecture documentation exists
+✓ Tests exist
+
+============================================================
+205. FINAL DESIGN PRINCIPLE
+============================================================
+
+The central experience should communicate one powerful idea:
+
+"Your farm plan adapts as the weather changes."
+
+The application is not simply:
+
+Weather Dashboard
++
+Yield Predictor
+
+It is:
+
+WEATHER
++
+SOIL
++
+CROP
++
+AI
++
+CONTINUOUS MONITORING
+        ↓
+DYNAMIC FARM DECISIONS
+
+Build the application around this concept.
+
+============================================================
+206. START NOW
+============================================================
+
+Do not just provide a design description.
+
+Actually create the application.
+
+First inspect the environment and existing files.
+
+Then:
+
+1. Create the project structure.
+2. Install required dependencies.
+3. Build the frontend foundation.
+4. Build the premium responsive dashboard.
+5. Build backend structure.
+6. Connect frontend and backend.
+7. Create database schema.
+8. Create demo data.
+9. Implement weather service abstraction.
+10. Implement demo weather provider.
+11. Implement weather change detection.
+12. Implement dynamic farm plan.
+13. Implement yield prediction.
+14. Implement AI recommendation engine.
+15. Implement notifications.
+16. Implement AI assistant.
+17. Implement the weather-change simulation.
+18. Test the entire workflow.
+19. Fix errors.
+20. Polish the UI.
+21. Ensure responsive behavior.
+22. Prepare deployment configuration.
+23. Write README and documentation.
+
+IMPORTANT:
+
+Do not stop after creating the UI.
+
+The final result must demonstrate the complete workflow:
+
+FARMER
+→ FARM DATA
+→ WEATHER
+→ AI ANALYSIS
+→ YIELD PREDICTION
+→ FARM PLAN
+→ WEATHER CHANGE
+→ AI RE-EVALUATION
+→ UPDATED PLAN
+→ FARMER NOTIFICATION
+
+Make the experience visually premium, technically modular, data-consistent, transparent about AI limitations, and ready for future real RMC/IMD data integration.
