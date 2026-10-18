@@ -247,6 +247,19 @@ export default function Dashboard() {
   const requestId = useRef(0);
   const weatherRef = useRef<HTMLDivElement>(null);
   const mandiRef = useRef<HTMLDivElement>(null);
+  const runBtnRef = useRef<HTMLButtonElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const [runBtnVisible, setRunBtnVisible] = useState(true);
+  const [justChecked, setJustChecked] = useState(false);
+
+  // Show the floating "Check" button only when the form's own button is off screen.
+  useEffect(() => {
+    const el = runBtnRef.current;
+    if (!el || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(([entry]) => setRunBtnVisible(entry.isIntersecting), { threshold: 0.1 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const season = useMemo(() => getSeason(), []);
   const farmerName = useMemo(() => {
     try { return (JSON.parse(localStorage.getItem('user') || '{}').full_name || '').split(' ')[0]; } catch { return ''; }
@@ -577,6 +590,7 @@ export default function Dashboard() {
 
               <div className="mt-6 space-y-2.5">
                 <button
+                  ref={runBtnRef}
                   id="run-analysis-btn"
                   onClick={runAnalysis}
                   disabled={isAnalyzing || !liveInputs}
@@ -700,7 +714,7 @@ export default function Dashboard() {
           <main className="xl:col-span-8 space-y-5">
 
             {/* KPI cards (tap to explain) */}
-            <div>
+            <div ref={resultsRef} className="scroll-mt-20">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {results ? kpis.map(k => (
                   <button
@@ -1023,6 +1037,32 @@ export default function Dashboard() {
             </div>
           </form>
         </div>
+      )}
+
+      {/* Floating run button — follows the farmer while scrolling */}
+      {!runBtnVisible && (
+        <button
+          onClick={async () => {
+            await runAnalysis();
+            setJustChecked(true);
+            window.setTimeout(() => setJustChecked(false), 2000);
+            resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+          disabled={isAnalyzing || !liveInputs}
+          aria-label="Check my harvest"
+          className="fab-run fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[9000] flex items-center gap-2 pl-3 pr-5 h-14 rounded-full text-cream font-extrabold shadow-2xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-80"
+          style={{ background: 'linear-gradient(135deg, #2F7D32 0%, #558B2F 60%, #F2A71B 100%)', boxShadow: '0 12px 28px -8px rgba(47,125,50,0.6)' }}
+        >
+          <span className="w-9 h-9 rounded-full bg-cream/20 flex items-center justify-center">
+            {isAnalyzing ? <Loader2 size={18} className="animate-spin" /> : justChecked ? <CheckCircle size={18} /> : <RefreshCw size={18} />}
+          </span>
+          <span className="flex flex-col items-start leading-tight">
+            <span className="text-sm">{isAnalyzing ? 'Checking…' : justChecked ? 'Updated!' : 'Check my harvest'}</span>
+            {results && !isAnalyzing && (
+              <span className="text-[11px] font-semibold opacity-90">{tPerHaToQtlPerAcre(results.expected_yield).toFixed(1)} qtl/acre · {results.crop_health}</span>
+            )}
+          </span>
+        </button>
       )}
 
       {toast && (
