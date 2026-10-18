@@ -26,6 +26,9 @@ class FarmContext(BaseModel):
     temperature: Optional[float] = None
     rain_probability: Optional[int] = None
     is_simulation: Optional[bool] = False
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    state: Optional[str] = None
 
 class ChatRequest(BaseModel):
     message: str
@@ -106,6 +109,16 @@ def generate_response(intent: str, request: ChatRequest) -> dict:
     if intent == "WEATHER_QUERY":
         rain_prob = ctx.rain_probability if ctx.rain_probability is not None else 20
         temp = ctx.temperature if ctx.temperature is not None else 28
+        if ctx.lat is not None and ctx.lon is not None:
+            try:
+                from live_data import live_weather
+                wx = live_weather(lat=ctx.lat, lon=ctx.lon)
+                tomorrow = wx["daily"][1] if len(wx["daily"]) > 1 else wx["daily"][0]
+                rain_prob = int(max(wx["current"]["rain_probability"] or 0, tomorrow["rain_probability"] or 0))
+                temp = wx["current"]["temperature"]
+                ctx.is_simulation = False
+            except Exception:
+                pass
         
         if rain_prob > 50:
             ans = f"Yes, there is a high chance of rain ({rain_prob}%)."
@@ -180,9 +193,12 @@ def generate_response(intent: str, request: ChatRequest) -> dict:
             "action": "VIEW_CROP_PLAN"
         }
         
+    elif intent == "MARKET_QUERY" and (live := _live_market_reply(crop, ctx.state)):
+        resp = live
+
     elif intent == "MARKET_QUERY":
         resp = {
-            "response": f"🌾 ANSWER\nThe current local market price for {crop} is stable.\n\n📌 WHY?\nRecent supply has met the market demand, keeping prices steady.\n\n✅ WHAT TO DO\n1. Sort grades carefully before packing.\n2. Transport during cooler hours to preserve freshness.\n\n📊 DATA USED\nMarket: Local APMC\nCommodity: {crop}\n\nSOURCE:\n🔵 OFFICIAL DATA (Mocked)",
+            "response": f"🌾 ANSWER\nLive mandi prices for {crop} could not be fetched right now.\n\n📌 WHY?\nThe Agmarknet price service did not respond. Please try again in a few minutes.\n\n✅ WHAT TO DO\n1. Sort grades carefully before packing.\n2. Transport during cooler hours to preserve freshness.\n\n📊 DATA USED\nMarket: Local APMC\nCommodity: {crop}\n\nSOURCE:\nAgmarknet (unavailable)",
             "sources": ["🔵 OFFICIAL DATA"],
             "action": "OPEN_MARKET"
         }
@@ -364,3 +380,27 @@ def get_chat_history(user_id: int, farm_id: Optional[str] = None, db: Session = 
         ))
         
     return history
+
+
+def _live_market_reply(crop: str, state: Optional[str]):
+    """Answer price questions with today's Agmarknet mandi prices (cached in live_data)."""
+    from live_data import mandi_prices
+    for scope in ([state] if state else []) + [None]:
+        try:
+            d = mandi_prices(crop=crop, state=scope, max_records=40)
+        except HTTPException:
+            continue
+        if not d["summary"]:
+            continue
+        s = d["summary"]
+        top = "\n".join(f"- {r['market']}, {r['district']}: ₹{int(r['modal_price'])}/qtl" for r in d["records"][:3])
+        where = f"in {scope}" if scope else "across India"
+        return {
+            "response": f"🌾 ANSWER\nToday's mandi price for {crop} {where} is about ₹{s['median_modal']}/quintal "
+                        f"(range ₹{int(s['lowest'])} – ₹{int(s['highest'])}).\n\n📊 MARKETS\n{top}\n\n✅ WHAT TO DO\n"
+                        f"1. Compare 2–3 nearby mandis before selling.\n2. Sort and grade produce — better grades fetch the higher price.\n\n"
+                        f"📅 DATA DATE\n{d['latest_date']} · {d['count']} markets",
+            "sources": ["🟢 LIVE DATA · Agmarknet"],
+            "action": "OPEN_MARKET",
+        }
+    return None

@@ -21,8 +21,8 @@ app.add_middleware(
 allow_headers=["*"],
 )
 
-from mospi_data import router as mospi_router
-app.include_router(mospi_router)
+from live_data import router as live_router, live_weather, mandi_prices
+app.include_router(live_router)
 
 from ai_chat import router as ai_chat_router
 app.include_router(ai_chat_router)
@@ -115,6 +115,9 @@ class FarmSetup(BaseModel):
     budget_range: str = "Medium"
     target_market: str = "Local Mandi"
     crop_id: str
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+    state: Optional[str] = None
     variety: str = ""
     planting_date: str = ""
     planting_method: str = ""
@@ -205,7 +208,7 @@ def get_categorized_crops():
 @app.post("/api/predict/yield")
 def predict_yield(data: FarmData):
     cd, ph_factor, temp_factor, n_factor = compute_yield_factors(data)
-    expected_yield = round(cd["base_yield"] * ph_factor * temp_factor * n_factor + random.uniform(-0.1, 0.2), 2)
+    expected_yield = round(cd["base_yield"] * ph_factor * temp_factor * n_factor, 2)
     soil_score = round((ph_factor * 0.4 + n_factor * 0.35 + min(1.0, data.phosphorus / 50) * 0.125 + min(1.0, data.potassium / 55) * 0.125) * 100)
     health = "Good"
     if ph_factor < 0.8 or temp_factor < 0.8: health = "Fair"
@@ -248,34 +251,6 @@ def predict_yield(data: FarmData):
             "ph_factor": round(ph_factor * 100), "temp_factor": round(temp_factor * 100),
             "nitrogen_factor": round(n_factor * 100), "nutrients": nutrients, "tasks": tasks}
 
-@app.get("/api/history/{crop}")
-def get_yield_history(crop: str):
-    cd = CROP_DATA.get(crop, CROP_DATA["Rice"])
-    base = cd["base_yield"]
-    monthly = []
-    for i, month in enumerate(MONTHS):
-        seasonal = math.sin((i / 11.0) * math.pi) * 0.3 + 0.85
-        actual = round(base * seasonal + random.uniform(-base*0.1, base*0.1), 2)
-        predicted = round(base * seasonal + random.uniform(-base*0.05, base*0.05), 2)
-        monthly.append({"month": month, "actual": max(0, actual), "predicted": max(0, predicted), "rainfall": round(random.uniform(20, 180), 1)})
-    return {"crop": crop, "history": monthly}
-
-@app.get("/api/market/{crop}")
-def get_market_prices(crop: str):
-    base = 18000
-    if crop in CATEGORIZED_CROPS["Vegetables"]: base = 25000
-    elif crop in CATEGORIZED_CROPS["Fruits"]: base = 40000
-    elif crop in CATEGORIZED_CROPS["Spices"]: base = 150000
-    elif crop in CATEGORIZED_CROPS["Commercial / Cash Crops"]: base = 60000
-    last6 = MONTHS[-6:]
-    prices = []
-    price = base
-    for month in last6:
-        price += random.randint(int(-base*0.05), int(base*0.08))
-        price = max(base * 0.8, min(base * 1.3, price))
-        prices.append({"month": month, "price": round(price), "msp": round(base * 0.9)})
-    return {"crop": crop, "currency": "INR/tonne", "prices": prices}
-
 @app.get("/api/calendar/{crop}")
 def get_crop_calendar(crop: str):
     if crop in CATEGORIZED_CROPS["Vegetables"]:
@@ -297,35 +272,6 @@ def get_crop_calendar(crop: str):
                   {"phase": "Reproductive Phase", "start": "Month 5", "end": "Month 5", "color": "#fbbf24"},
                   {"phase": "Harvesting", "start": "Month 6", "end": "Month 6", "color": "#f472b6"}]
     return {"crop": crop, "phases": phases}
-
-@app.get("/api/compare")
-def compare_crops():
-    keys = ["Rice", "Wheat", "Maize (Corn)", "Tomato", "Banana", "Cotton", "Groundnut"]
-    results = []
-    for crop in keys:
-        if crop in CROP_DATA:
-            cd = CROP_DATA[crop]
-            variation = random.uniform(0.85, 1.1)
-            results.append({"crop": crop, "yield": round(cd["base_yield"] * variation, 2), "potential": round(cd["base_yield"] * 1.15, 2), "color": cd["color"]})
-    return {"crops": results}
-
-class ChatMessage(BaseModel):
-    message: str
-    context: Optional[str] = None
-
-@app.post("/api/chat")
-def chat_with_ai(data: ChatMessage):
-    msg = data.message.lower()
-    reply = "I'm the Agri-Yield Pro AI. I can analyze your farm conditions, recommend crops, and now interpret official MoSPI statistics."
-    
-    if "trend" in msg or "mospi" in msg or "official" in msg:
-        reply = "According to official MoSPI data (2011-2024), agricultural output has grown steadily. At current prices, the All-India value of output has a positive 12-Year CAGR. Would you like to explore state-specific trends in the India Agriculture tab?"
-    elif "recommend" in msg or "crop" in msg:
-        reply = "Based on your soil parameters and local weather conditions, I recommend focusing on high-yield varieties of Rice or Wheat. Check your Dashboard's 'Farming Plan' tab for detailed tasks."
-    elif "weather" in msg or "rain" in msg:
-        reply = "Looking at the current weather simulation, there's a moderate chance of rain. I advise postponing heavy irrigation until tomorrow."
-        
-    return {"reply": reply, "is_official": "mospi" in msg.lower()}
 
 @app.get("/api/lifecycle/{crop}")
 def get_lifecycle_plan(crop: str):
@@ -1202,6 +1148,31 @@ def get_crop_stages(crop_id: str):
     stages = PLANNING_CROPS[crop_id].get("stages", [])
     return {"crop_id": crop_id, "stages": stages}
 
+def live_market_info(crop_name: str, state: Optional[str], est_yield_t: float) -> dict:
+    """Today's mandi prices for the crop, preferring markets in the farmer's state."""
+    info = {"estimated_price_inr_per_tonne": None, "estimated_revenue_inr": None, "nearby_markets": [],
+            "price_per_quintal": None, "price_date": None, "price_scope": None,
+            "data_source": "Live mandi prices unavailable right now"}
+    for scope in ([state] if state else []) + [None]:
+        try:
+            d = mandi_prices(crop=crop_name, state=scope, max_records=40)
+        except HTTPException:
+            continue
+        if not d["summary"]:
+            continue
+        per_q = d["summary"]["median_modal"]
+        info.update({
+            "price_per_quintal": per_q,
+            "estimated_price_inr_per_tonne": per_q * 10,
+            "estimated_revenue_inr": round(est_yield_t * per_q * 10),
+            "nearby_markets": [f"{r['market']} ({r['district']}) — ₹{int(r['modal_price'])}/qtl" for r in d["records"][:5]],
+            "price_date": d["latest_date"],
+            "price_scope": scope or "All India",
+            "data_source": f"LIVE · Agmarknet ({d['latest_date']})",
+        })
+        break
+    return info
+
 @app.post("/api/crop-plans")
 def create_crop_plan(farm_setup: FarmSetup):
     """Create a complete AI-generated crop lifecycle plan."""
@@ -1213,7 +1184,18 @@ def create_crop_plan(farm_setup: FarmSetup):
     planting_date = farm_setup.planting_date or date.today().strftime("%Y-%m-%d")
     farm_dict = farm_setup.model_dump()
 
-    plan = planning_engine.generate_plan(crop, farm_dict, planting_date)
+    weather = None
+    if farm_setup.lat is not None and farm_setup.lon is not None:
+        try:
+            cur = live_weather(lat=farm_setup.lat, lon=farm_setup.lon)["current"]
+            weather = {"temperature": cur["temperature"], "rain_probability": cur["rain_probability"] or 0,
+                       "humidity": cur["humidity"], "wind_speed": cur["wind_speed"]}
+        except HTTPException:
+            weather = None
+
+    plan = planning_engine.generate_plan(crop, farm_dict, planting_date, weather)
+    plan["weather_data_source"] = "LIVE · Open-Meteo" if weather else "Default values (no location given)"
+    plan["market_info"] = live_market_info(crop["name"], farm_setup.state, plan["estimated_yield_t"])
     ACTIVE_PLANS[plan["plan_id"]] = plan
     return {"plan_id": plan["plan_id"], "plan": plan}
 
@@ -1330,7 +1312,7 @@ def mark_crop_sold(plan_id: str):
         "plan_versions": plan["plan_version"],
         "weather_events": len([v for v in plan["versions"] if v.get("version",1) > 1]),
         "final_status": "Crop Sold ✓",
-        "data_note": "Revenue figures are DEMO DATA based on typical market prices.",
+        "data_note": f"Revenue uses {plan.get('market_info', {}).get('data_source', 'no price data')}.",
     }
     return {"report": report}
 

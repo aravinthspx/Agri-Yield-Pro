@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Loader2, Sprout, MapPin, Droplets, FlaskConical, Calendar } from 'lucide-react';
 import type { CropDetail, ActivePlan, FarmFormData } from './index';
 import { API_BASE } from './index';
+import { useFarmLocation } from '../../lib/farmLocation';
+import LocationPicker from '../LocationPicker';
 
 interface Props {
   crop: CropDetail;
@@ -33,6 +35,7 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
     planting_method: crop.planting_method || "Direct Sowing",
   });
 
+  const { location: farmLocation } = useFarmLocation();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
 
@@ -50,6 +53,11 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
         nitrogen: Number(form.nitrogen),
         phosphorus: Number(form.phosphorus),
         potassium: Number(form.potassium),
+        // Real location → backend pulls live weather and mandi prices for the plan.
+        location: [farmLocation.name, farmLocation.state].filter(Boolean).join(', '),
+        lat: farmLocation.lat,
+        lon: farmLocation.lon,
+        state: farmLocation.state,
       };
       const res = await fetch(`${API_BASE}/api/crop-plans`, {
         method: 'POST',
@@ -105,9 +113,10 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
               <LabeledInput label="Farm Name" id="farm-name">
                 <input id="farm-name" type="text" value={form.farm_name} onChange={e => set('farm_name', e.target.value)} className={inputCls} placeholder="e.g. Aravinth's Farm" />
               </LabeledInput>
-              <LabeledInput label="Location" id="farm-location">
-                <input id="farm-location" type="text" value={form.location} onChange={e => set('location', e.target.value)} className={inputCls} placeholder="e.g. Tamil Nadu, India" />
-              </LabeledInput>
+              <div>
+                <div className="text-xs font-medium text-neutral-400 mb-1.5">Location (used for live weather & mandi prices)</div>
+                <LocationPicker />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <LabeledInput label="Farm Area" id="farm-area">
                   <input id="farm-area" type="number" min={0.1} step={0.1} value={form.area} onChange={e => set('area', e.target.value)} className={inputCls} />

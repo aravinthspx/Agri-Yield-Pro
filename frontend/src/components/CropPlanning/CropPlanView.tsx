@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import type { ActivePlan, Task, Notification } from './index';
 import { API_BASE } from './index';
+import { useFarmLocation } from '../../lib/farmLocation';
+import { getJson, qs, type LiveWeather } from '../../lib/live';
 
 interface Props {
   plan: ActivePlan;
@@ -220,6 +222,10 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
   const [plan, setPlanLocal] = useState<ActivePlan>(initialPlan);
   const [activeTab, setActiveTab] = useState<'tasks' | 'irrigation' | 'fertilizer' | 'pest' | 'market' | 'history'>('tasks');
   const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
+  const [liveError, setLiveError] = useState('');
+  const { location: farmLocation } = useFarmLocation();
+  const isLiveWeather = String(plan.weather_data_source || '').startsWith('LIVE');
+  const isLiveMarket = String(plan.market_info?.data_source || '').startsWith('LIVE');
   const [isSimulating, setIsSimulating] = useState(false);
   const [simResult, setSimResult] = useState<{ changes: string[]; version: number } | null>(null);
   const [soldStatus, setSoldStatus] = useState(false);
@@ -255,6 +261,29 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
       setSimResult({ changes: data.changes, version: data.plan_version });
     } catch {
       alert('Backend not connected. Start the FastAPI server to test simulation.');
+    } finally { setIsSimulating(false); }
+  };
+
+  // Re-plan with today's real weather at the farm (not a simulation).
+  const handleApplyLiveWeather = async () => {
+    setIsSimulating(true);
+    setSimResult(null);
+    setLiveError('');
+    try {
+      const wx = await getJson<LiveWeather>(`/api/live/weather?${qs({ lat: farmLocation.lat, lon: farmLocation.lon })}`);
+      const today = wx.daily[0];
+      const data = await getJson<any>(`/api/crop-plans/${plan.plan_id}/weather-update`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          temperature: wx.current.temperature, humidity: Math.round(wx.current.humidity),
+          rain_probability: Math.round(Math.max(wx.current.rain_probability ?? 0, today?.rain_probability ?? 0)),
+          rainfall_mm: today?.rain_mm ?? wx.current.precipitation, is_simulation: false,
+        }),
+      });
+      updatePlan({ ...data.plan, weather_data_source: `LIVE · Open-Meteo · ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` } as ActivePlan);
+      setSimResult({ changes: data.changes, version: data.plan_version });
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : 'Live weather unavailable');
     } finally { setIsSimulating(false); }
   };
 
@@ -329,7 +358,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
           </div>
           <div className="p-3 rounded-xl text-[10px] text-neutral-600"
             style={{ background: 'rgba(59,42,26,0.02)', border: '1px solid rgba(59,42,26,0.04)' }}>
-            ℹ️ Revenue estimates are DEMO DATA based on typical market prices. Actual prices may vary.
+            ℹ️ {soldReport.data_note || 'Revenue uses the mandi price available when the plan was made.'} Actual selling prices vary by mandi and grade.
           </div>
         </div>
       </div>
@@ -352,7 +381,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                 <span>📍 {plan.farm.location}</span>
                 <span>📐 {plan.farm.area} {plan.farm.area_unit}</span>
                 <span>📅 Planted {formatDate(plan.planting_date)}</span>
-                <span className="text-yellow-400">⚠ {plan.weather_data_source}</span>
+                <span className={isLiveWeather ? "text-emerald-400 font-semibold" : "text-amber-400"}>{isLiveWeather ? "🟢" : "⚠"} Weather: {plan.weather_data_source}</span>
               </div>
             </div>
           </div>
@@ -385,15 +414,25 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               <CloudRain size={15} className="text-blue-400" /> 🌦 Weather Intelligence & Dynamic Plan
             </h2>
             <p className="text-xs text-neutral-500 max-w-lg">
-              Simulate a weather change to see the AI automatically update your crop plan, recalculate tasks, and generate alerts.
+              Update the plan with today's real weather at your farm, or try a "what if" scenario to see how the AI would change your tasks.
             </p>
             <div className="flex items-center gap-3 mt-2 text-xs text-neutral-600">
               <span className="flex items-center gap-1"><Thermometer size={11} className="text-orange-400" /> {plan.weather.temperature ?? 30}°C</span>
               <span className="flex items-center gap-1"><CloudRain size={11} className="text-blue-400" /> Rain: {plan.weather.rain_probability ?? 20}%</span>
-              <span className="text-yellow-500/80 text-[10px]">{plan.weather_data_source}</span>
+              <span className={`text-[10px] font-semibold ${isLiveWeather ? 'text-emerald-400' : 'text-amber-400'}`}>{plan.weather_data_source}</span>
             </div>
+            {liveError && <p className="text-xs text-red-400 mt-1">⚠️ {liveError}</p>}
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <button
+              id="apply-live-weather-btn"
+              onClick={handleApplyLiveWeather}
+              disabled={isSimulating}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-emerald-500 hover:bg-emerald-600 text-cream"
+            >
+              {isSimulating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Use today's real weather
+            </button>
             <button
               id="simulate-rain-btn"
               onClick={() => handleSimulateWeather('heavy_rain')}
@@ -402,7 +441,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               style={{ background: 'rgba(58,134,200,0.15)', border: '1px solid rgba(58,134,200,0.3)', color: '#3A86C8' }}
             >
               {isSimulating ? <Loader2 size={12} className="animate-spin" /> : <CloudRain size={12} />}
-              🌧️ Simulate Heavy Rain
+              🌧️ What if heavy rain?
             </button>
             <button
               id="simulate-drought-btn"
@@ -411,7 +450,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
               style={{ background: 'rgba(240,127,26,0.12)', border: '1px solid rgba(240,127,26,0.25)', color: '#E07A1F' }}
             >
-              <Sun size={12} /> ☀️ Simulate Drought
+              <Sun size={12} /> ☀️ What if drought?
             </button>
           </div>
         </div>
@@ -625,7 +664,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                       : `✅ Low pest risk currently. Maintain routine monitoring every 7 days. Conditions are favorable for healthy ${plan.crop_name} growth.`}
                   </p>
                   <div className="mt-3 p-2 rounded-lg bg-white/3 text-[9px] text-neutral-600">
-                    ℹ️ Risk assessment is based on SIMULATED weather data and general agronomic rules. For confirmed pest presence, consult your local Krishi Vigyan Kendra.
+                    ℹ️ Risk assessment uses {isLiveWeather ? 'live weather at your farm' : 'the latest weather values in this plan'} and general agronomic rules. For confirmed pest presence, consult your local Krishi Vigyan Kendra.
                   </div>
                 </div>
               </div>
@@ -636,14 +675,14 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               <div>
                 <h3 className="text-sm font-semibold text-neutral-200 mb-4 flex items-center gap-2">
                   <ShoppingBag size={15} className="text-amber-400" /> Market & Selling Plan
-                  <span className="ml-2 text-[9px] bg-yellow-500/15 text-yellow-400 px-1.5 py-0.5 rounded">DEMO DATA</span>
+                  <span className={`ml-2 text-[9px] px-1.5 py-0.5 rounded ${isLiveMarket ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}>{plan.market_info?.data_source || 'No price data'}</span>
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                   {[
                     { label: 'Est. Yield', value: `${plan.estimated_yield_t} t`, icon: '📊', color: '#2F7D32' },
-                    { label: 'Est. Price', value: `₹${(plan.market_info?.estimated_price_inr_per_tonne || 20000).toLocaleString('en-IN')}/t`, icon: '💰', color: '#E09B12' },
-                    { label: 'Est. Revenue', value: `₹${(plan.market_info?.estimated_revenue_inr || 0).toLocaleString('en-IN')}`, icon: '📈', color: '#3A86C8' },
-                    { label: 'Nearest Market', value: `~${plan.market_info?.transport_distance_km || 25} km`, icon: '🚚', color: '#E07A1F' },
+                    { label: 'Mandi price', value: plan.market_info?.price_per_quintal ? `₹${plan.market_info.price_per_quintal.toLocaleString('en-IN')}/qtl` : '—', icon: '💰', color: '#E09B12' },
+                    { label: 'Est. Revenue', value: plan.market_info?.estimated_revenue_inr ? `₹${plan.market_info.estimated_revenue_inr.toLocaleString('en-IN')}` : '—', icon: '📈', color: '#3A86C8' },
+                    { label: 'Price from', value: plan.market_info?.price_scope || '—', icon: '📍', color: '#E07A1F' },
                   ].map(item => (
                     <div key={item.label} className="glass-card p-3 text-center">
                       <div className="text-xl mb-1">{item.icon}</div>
@@ -654,15 +693,16 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Nearby Market Options</h4>
-                  {(plan.market_info?.nearby_markets || ['Local Mandi', 'APMC Market', 'FPO']).map((market: string, i: number) => (
+                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Mandis reporting today</h4>
+                  {!(plan.market_info?.nearby_markets?.length) && <p className="text-xs text-neutral-500">No mandi prices were available when this plan was made.</p>}
+                  {(plan.market_info?.nearby_markets || []).map((market: string, i: number) => (
                     <div key={i} className="flex items-center justify-between p-3 rounded-xl"
                       style={{ background: 'rgba(59,42,26,0.03)', border: '1px solid rgba(59,42,26,0.06)' }}>
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg">🏪</span>
                         <div>
-                          <div className="text-xs font-medium text-neutral-200">{market}</div>
-                          <div className="text-[10px] text-neutral-600">DEMO DATA · Price data unavailable</div>
+                          <div className="text-xs font-medium text-neutral-200">{market.split(' — ')[0]}</div>
+                          <div className="text-[10px] text-neutral-500">Modal price {market.split(' — ')[1] ?? '—'} · Agmarknet {plan.market_info?.price_date ?? ''}</div>
                         </div>
                       </div>
                       <button
@@ -680,7 +720,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
 
                 <div className="mt-4 p-3 rounded-xl text-[10px] text-neutral-600"
                   style={{ background: 'rgba(59,42,26,0.02)', border: '1px solid rgba(59,42,26,0.04)' }}>
-                  ℹ️ Market prices, revenue estimates, and transportation data shown here are DEMO DATA. Actual prices vary by location, season, and market conditions. Check eNAM or local mandi rates before selling.
+                  ℹ️ Prices are real mandi (APMC) prices from Agmarknet on the date shown. Revenue = your estimated yield × typical price. Prices change daily — check the India Agriculture tab or eNAM before selling.
                 </div>
 
                 {!soldStatus && (

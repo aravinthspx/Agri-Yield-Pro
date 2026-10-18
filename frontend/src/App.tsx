@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 import { Sprout, LayoutDashboard, Map, LogOut, UserPlus, Brain } from 'lucide-react'
 import Dashboard from './components/Dashboard'
 import CropPlanning from './components/CropPlanning'
-import MospiExplorer from './components/MospiExplorer/MospiExplorer'
+import IndiaAgriculture from './components/IndiaAgriculture/IndiaAgriculture'
 import YieldOptimizer from './components/YieldOptimizer/YieldOptimizer'
 import AIChatBox from './components/AIChatBox'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -125,7 +125,7 @@ function MainApp() {
         <CropPlanning />
       </div>
       <div style={{ display: activeTab === 'mospi-explorer' ? 'block' : 'none' }}>
-        <MospiExplorer />
+        <IndiaAgriculture />
       </div>
       
       <ErrorBoundary>

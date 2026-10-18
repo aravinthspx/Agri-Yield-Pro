@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Brain, Sparkles, CheckCircle2, AlertTriangle, XCircle, ArrowRight,
   Download, Printer, RefreshCw, Sun, Wind, Droplets, Thermometer,
@@ -83,6 +83,9 @@ interface CropYieldOptimizationResponse {
 }
 
 import { API_BASE } from '../../config';
+import { useFarmLocation } from '../../lib/farmLocation';
+import { getJson, qs, type LiveWeather } from '../../lib/live';
+import LocationPicker from '../LocationPicker';
 
 export type Language = 'en' | 'hi' | 'te' | 'ml' | 'ta' | 'kn' | 'mr' | 'bn' | 'gu' | 'pa';
 
@@ -581,6 +584,8 @@ export default function YieldOptimizer() {
   // Results State
   const [isLoading, setIsLoading] = useState(false);
   const [isWeatherLoading, setIsWeatherLoading] = useState(false);
+  const [weatherNote, setWeatherNote] = useState('');
+  const { location: farmLocation } = useFarmLocation();
   const [result, setResult] = useState<CropYieldOptimizationResponse | null>(null);
 
   // What-If Simulation State (Explainable AI)
@@ -630,49 +635,24 @@ export default function YieldOptimizer() {
     if (presetData.area_acres) setAreaAcres(presetData.area_acres);
   };
 
-  const handleFetchLiveWeather = async () => {
+  // Real weather for the shared farm location (no made-up fallback values).
+  const handleFetchLiveWeather = useCallback(async () => {
     setIsWeatherLoading(true);
+    setWeatherNote('');
     try {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            try {
-              const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=relativehumidity_2m`);
-              const data = await res.json();
-              if (data.current_weather) {
-                setTemperature(Math.round(data.current_weather.temperature));
-                setWindSpeed(Math.round(data.current_weather.windspeed));
-                if (data.hourly && data.hourly.relativehumidity_2m) {
-                  setHumidity(Math.round(data.hourly.relativehumidity_2m[0]));
-                }
-              }
-            } catch {
-              setTemperature(28);
-              setHumidity(65);
-              setWindSpeed(10);
-            } finally {
-              setIsWeatherLoading(false);
-            }
-          },
-          () => {
-            setTemperature(28);
-            setHumidity(65);
-            setWindSpeed(10);
-            setIsWeatherLoading(false);
-          },
-          { timeout: 5000 }
-        );
-      } else {
-        setTemperature(28);
-        setHumidity(65);
-        setWindSpeed(10);
-        setIsWeatherLoading(false);
-      }
-    } catch {
+      const wx = await getJson<LiveWeather>(`/api/live/weather?${qs({ lat: farmLocation.lat, lon: farmLocation.lon })}`);
+      setTemperature(Math.round(wx.current.temperature));
+      setHumidity(Math.round(wx.current.humidity));
+      setWindSpeed(Math.round(wx.current.wind_speed));
+      setWeatherNote(`${wx.current.icon} Live weather for ${farmLocation.name} · ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`);
+    } catch (err) {
+      setWeatherNote(`⚠️ ${err instanceof Error ? err.message : 'Live weather unavailable'} — values not changed`);
+    } finally {
       setIsWeatherLoading(false);
     }
-  };
+  }, [farmLocation.lat, farmLocation.lon, farmLocation.name]);
+
+  useEffect(() => { handleFetchLiveWeather(); }, [handleFetchLiveWeather]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -911,6 +891,8 @@ export default function YieldOptimizer() {
           <RefreshCw size={13} className={isWeatherLoading ? 'animate-spin' : ''} />
           {t.liveWeatherBtn}
         </button>
+        <LocationPicker />
+        {weatherNote && <span className="text-xs font-semibold text-neutral-400 basis-full md:basis-auto">{weatherNote}</span>}
       </div>
 
       {/* ── Main Input Form (Matching Paper Figures 4 & 5) ── */}
