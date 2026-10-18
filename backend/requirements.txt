@@ -1,14 +1,9 @@
-fastapi
-uvicorn[standard]
-pandas
-numpy
-scikit-learn
-xgboost
-sqlalchemy
-passlib[bcrypt]
-python-jose[cryptography]
-pyjwt
-sqlalchemy
-pydantic
-pytest
-python-dotenv
+# Only what the backend imports. The yield models are pure Python.
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+pydantic==2.13.5
+SQLAlchemy==2.0.54
+psycopg[binary]==3.3.6
+python-jose[cryptography]==3.5.0
+bcrypt==5.0.0
+python-dotenv==1.2.3

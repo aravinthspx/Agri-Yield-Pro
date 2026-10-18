@@ -1,0 +1,30 @@
+# Render Blueprint: Dashboard → New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: agri-yield-pro-api
+    runtime: python
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: APP_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true          # Render creates a strong random value
+      - key: DATABASE_URL
+        sync: false                  # paste your Neon / Render Postgres URL
+      - key: SMS_PROVIDER
+        value: fast2sms
+      - key: FAST2SMS_API_KEY
+        sync: false
+      - key: FAST2SMS_ROUTE
+        value: otp
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: DATA_GOV_IN_API_KEY
+        sync: false
