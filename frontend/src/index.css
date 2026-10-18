@@ -782,3 +782,7 @@ input[type=range].farm-range { width: 100%; accent-color: #2F7D32; cursor: point
 /* Floating "Check my harvest" button */
 @keyframes fab-in { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: none; } }
 .fab-run { animation: fab-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+
+/* Bell wiggle when there is an unread alert */
+@keyframes bell-shake { 0%, 88%, 100% { transform: rotate(0); } 90% { transform: rotate(14deg); } 93% { transform: rotate(-12deg); } 96% { transform: rotate(8deg); } }
+.bell-shake { animation: bell-shake 4s ease-in-out infinite; transform-origin: top center; }
