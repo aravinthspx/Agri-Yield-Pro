@@ -29,16 +29,16 @@ function MainApp() {
     <div className="min-h-screen bg-neutral-950 text-white font-sans selection:bg-emerald-500/30">
       <nav
         className="sticky top-0 z-50 border-b border-white/5"
-        style={{ background: 'rgba(5,10,14,0.85)', backdropFilter: 'blur(20px)' }}
+        style={{ background: 'rgba(251,246,234,0.85)', backdropFilter: 'blur(20px)' }}
       >
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6 flex items-center gap-4 h-14">
+        <div className="max-w-[1600px] mx-auto px-3 md:px-6 flex items-center gap-2 sm:gap-4 h-14">
           {/* Logo */}
-          <div className="flex items-center gap-2.5 mr-4">
+          <div className="flex items-center gap-2.5 sm:mr-4">
             <div className="p-1.5 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(16,185,129,0.1))', border: '1px solid rgba(52,211,153,0.2)' }}>
+              style={{ background: 'linear-gradient(135deg, rgba(47,125,50,0.2), rgba(47,125,50,0.1))', border: '1px solid rgba(47,125,50,0.2)' }}>
               <Sprout size={18} className="text-emerald-400" />
             </div>
-            <span className="text-sm font-bold gradient-text-emerald hidden sm:block" style={{ fontFamily: 'Space Grotesk' }}>
+            <span className="text-sm font-bold gradient-text-emerald hidden sm:block" style={{ fontFamily: 'Baloo 2' }}>
               Agri-Yield Pro
             </span>
           </div>
@@ -48,7 +48,7 @@ function MainApp() {
             <button
               id="nav-dashboard"
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'dashboard'
+              className={`flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'dashboard'
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                 : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
                 }`}
@@ -59,7 +59,7 @@ function MainApp() {
             <button
               id="nav-yield-optimizer"
               onClick={() => setActiveTab('yield-optimizer')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'yield-optimizer'
+              className={`flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'yield-optimizer'
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                 : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
                 }`}
@@ -70,7 +70,7 @@ function MainApp() {
             <button
               id="nav-crop-planning"
               onClick={() => setActiveTab('crop-planning')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'crop-planning'
+              className={`flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'crop-planning'
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                 : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
                 }`}
@@ -81,7 +81,7 @@ function MainApp() {
             <button
               id="nav-mospi"
               onClick={() => setActiveTab('mospi-explorer')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'mospi-explorer'
+              className={`flex items-center gap-2 px-2.5 sm:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'mospi-explorer'
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
                 : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
                 }`}
@@ -97,14 +97,14 @@ function MainApp() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleAddAccount}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all border border-transparent hover:border-emerald-500/20"
+              className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all border border-transparent hover:border-emerald-500/20"
             >
               <UserPlus size={15} />
               <span className="hidden sm:inline">Add Account</span>
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+              className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
             >
               <LogOut size={15} />
               <span className="hidden sm:inline">Log Out</span>

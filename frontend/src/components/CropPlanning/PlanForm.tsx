@@ -83,7 +83,7 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
         <div className="flex items-center gap-3 mb-2">
           <span className="text-4xl">{crop.icon}</span>
           <div>
-            <h2 className="text-2xl font-bold text-neutral-100" style={{ fontFamily: 'Space Grotesk' }}>
+            <h2 className="text-2xl font-bold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>
               Setup Your Farm
             </h2>
             <p className="text-sm text-neutral-500">
@@ -147,9 +147,9 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
                 <label className="text-neutral-500 text-xs font-medium uppercase tracking-wider block mb-2">NPK (kg/ha)</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { label: 'N', key: 'nitrogen' as keyof FarmFormData, color: '#34d399', id: 'npk-n' },
-                    { label: 'P', key: 'phosphorus' as keyof FarmFormData, color: '#60a5fa', id: 'npk-p' },
-                    { label: 'K', key: 'potassium' as keyof FarmFormData, color: '#f97316', id: 'npk-k' },
+                    { label: 'N', key: 'nitrogen' as keyof FarmFormData, color: '#2F7D32', id: 'npk-n' },
+                    { label: 'P', key: 'phosphorus' as keyof FarmFormData, color: '#3A86C8', id: 'npk-p' },
+                    { label: 'K', key: 'potassium' as keyof FarmFormData, color: '#E07A1F', id: 'npk-k' },
                   ].map(({ label, key, color, id }) => (
                     <div key={label}>
                       <label htmlFor={id} className="block text-center text-xs font-bold mb-1" style={{ color }}>{label}</label>
@@ -169,11 +169,11 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                style={{ background: 'rgba(59,42,26,0.03)', border: '1px solid rgba(59,42,26,0.06)' }}>
                 <span className="text-sm text-neutral-300">Irrigation Available?</span>
                 <button type="button" onClick={() => set('irrigation_available', !form.irrigation_available)}
                   className={`w-10 h-6 rounded-full transition-all relative ${form.irrigation_available ? 'bg-emerald-500' : 'bg-neutral-700'}`}>
-                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.irrigation_available ? 'left-5' : 'left-1'}`} />
+                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-cream shadow transition-all ${form.irrigation_available ? 'left-5' : 'left-1'}`} />
                 </button>
               </div>
               {form.irrigation_available && (
@@ -213,11 +213,11 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="flex items-center justify-between p-3 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                style={{ background: 'rgba(59,42,26,0.03)', border: '1px solid rgba(59,42,26,0.06)' }}>
                 <span className="text-xs text-neutral-400">Organic?</span>
                 <button type="button" onClick={() => set('organic', !form.organic)}
                   className={`w-8 h-5 rounded-full transition-all relative ${form.organic ? 'bg-emerald-500' : 'bg-neutral-700'}`}>
-                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${form.organic ? 'left-3.5' : 'left-0.5'}`} />
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-cream shadow transition-all ${form.organic ? 'left-3.5' : 'left-0.5'}`} />
                 </button>
               </div>
               <LabeledInput label="Budget Range">
@@ -236,7 +236,7 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
 
         {error && (
           <div className="mt-4 p-3 rounded-xl text-sm text-red-400 flex items-center gap-2"
-            style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
+            style={{ background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
             ⚠️ {error}
           </div>
         )}
@@ -247,10 +247,10 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
             type="submit"
             id="generate-plan-btn"
             disabled={isGenerating}
-            className="flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
+            className="flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-base text-cream transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:scale-100"
             style={{
-              background: isGenerating ? 'rgba(52,211,153,0.2)' : 'linear-gradient(135deg, #059669, #0d9488)',
-              boxShadow: isGenerating ? 'none' : '0 8px 30px rgba(5,150,105,0.3)',
+              background: isGenerating ? 'rgba(47,125,50,0.2)' : 'linear-gradient(135deg, #2F7D32, #558B2F)',
+              boxShadow: isGenerating ? 'none' : '0 8px 30px rgba(47,125,50,0.3)',
             }}
           >
             {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <span className="text-xl">🤖</span>}

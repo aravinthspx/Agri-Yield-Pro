@@ -12,11 +12,12 @@ const Login = () => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loginMethod === 'phone') {
-      alert("Phone OTP login is not yet implemented. Please use Email login instead.");
+      setNotice('Login by phone OTP is coming soon. For now, please use the Email tab.');
       return;
     }
     
@@ -46,7 +47,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    alert("Google Login coming soon! Please create a Google OAuth app to enable.");
+    setNotice('Google sign-in is coming soon. For now, please log in with your email and password.');
   };
 
   return (
@@ -62,7 +63,7 @@ const Login = () => {
           <div className="w-32 h-32 mb-8 rounded-full border border-white/10 flex items-center justify-center bg-white/5 backdrop-blur-xl">
              <Sprout size={64} className="text-emerald-400" />
           </div>
-          <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Space Grotesk' }}>Premium AI Farming</h1>
+          <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Baloo 2' }}>Premium AI Farming</h1>
           <p className="text-neutral-400 max-w-md text-lg">
             Experience the future of Indian agriculture with intelligent insights, weather simulations, and seamless crop planning.
           </p>
@@ -78,16 +79,23 @@ const Login = () => {
         <div className="w-full max-w-md relative z-10">
           <div className="flex items-center gap-3 mb-8 justify-center lg:justify-start">
             <div className="p-2 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(16,185,129,0.1))', border: '1px solid rgba(52,211,153,0.2)' }}>
+              style={{ background: 'linear-gradient(135deg, rgba(47,125,50,0.2), rgba(47,125,50,0.1))', border: '1px solid rgba(47,125,50,0.2)' }}>
               <Sprout size={24} className="text-emerald-400" />
             </div>
-            <span className="text-xl font-bold gradient-text-emerald" style={{ fontFamily: 'Space Grotesk' }}>
+            <span className="text-xl font-bold gradient-text-emerald" style={{ fontFamily: 'Baloo 2' }}>
               Agri-Yield Pro
             </span>
           </div>
 
           <h2 className="text-3xl font-bold mb-2">Welcome back, Farmer 👋</h2>
           <p className="text-neutral-400 mb-8">Please enter your details to sign in.</p>
+
+          {notice && (
+            <div className="mb-6 p-4 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-400 text-sm flex items-start justify-between gap-3">
+              <span>ℹ️ {notice}</span>
+              <button type="button" onClick={() => setNotice('')} className="font-bold" aria-label="Dismiss">×</button>
+            </div>
+          )}
 
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
@@ -131,9 +139,13 @@ const Login = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-sm font-medium text-neutral-300">Password</label>
-                    <Link to="/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setNotice('Password reset by email is not set up yet. Please create a new account, or ask the app admin to reset your password.')}
+                      className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                    >
                       Forgot Password?
-                    </Link>
+                    </button>
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />

@@ -69,10 +69,23 @@ export default function MospiExplorer() {
       .finally(() => setIsLoading(false));
   }, [selectedState, selectedCrop, selectedIndicator]);
 
+  const downloadCsv = () => {
+    const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+    const rows = [['Year', 'State', 'Crop', 'Indicator', 'Value', 'Unit'],
+      ...trendData.map(d => [d.year, d.state, d.crop, d.indicator, d.value, d.unit])];
+    const blob = new Blob([rows.map(r => r.map(esc).join(',')).join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mospi_${selectedState}_${selectedCrop}.csv`.replace(/[^\w.-]+/g, '_');
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-[#0d1117] border border-white/10 rounded-xl p-3 shadow-2xl text-xs">
+        <div className="bg-[#FFFDF7] border border-white/10 rounded-xl p-3 shadow-2xl text-xs">
           <p className="text-neutral-400 mb-2 font-medium">{label}</p>
           {payload.map((entry: any, i: number) => (
             <p key={i} style={{ color: entry.color }} className="font-semibold">
@@ -102,7 +115,7 @@ export default function MospiExplorer() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-white font-display" style={{ fontFamily: 'Space Grotesk' }}>
+            <h1 className="text-3xl font-bold text-white font-display" style={{ fontFamily: 'Baloo 2' }}>
               India Agriculture Statistics
             </h1>
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold tracking-wide">
@@ -132,7 +145,7 @@ export default function MospiExplorer() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* SIDEBAR FILTERS */}
         <div className="lg:col-span-3 space-y-6">
-          <div className="glass-card p-5 border border-blue-500/10" style={{ boxShadow: 'inset 0 0 40px rgba(59,130,246,0.03)' }}>
+          <div className="glass-card p-5 border border-blue-500/10" style={{ boxShadow: 'inset 0 0 40px rgba(58,134,200,0.03)' }}>
             <h3 className="text-sm font-semibold text-neutral-200 mb-5 flex items-center gap-2">
               <FilterX size={16} className="text-blue-400" />
               Data Explorer
@@ -262,7 +275,11 @@ export default function MospiExplorer() {
                 <h2 className="text-lg font-semibold text-white">Historical Output Trend</h2>
                 <p className="text-xs text-neutral-500">{selectedState} • {selectedCrop}</p>
               </div>
-              <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-neutral-300 transition-colors">
+              <button
+                onClick={downloadCsv}
+                disabled={trendData.length === 0}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs font-medium text-neutral-300 transition-colors disabled:opacity-50"
+              >
                 <Download size={14} /> Download CSV
               </button>
             </div>
@@ -281,19 +298,19 @@ export default function MospiExplorer() {
                   <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#2B6CB0" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#2B6CB0" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                    <XAxis dataKey="year" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(val) => val.toLocaleString()} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(59,42,26,0.05)" vertical={false} />
+                    <XAxis dataKey="year" tick={{ fill: '#857059', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#857059', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(val) => val.toLocaleString()} />
                     <RechartsTooltip content={<CustomTooltip />} />
                     <Area 
                       type="monotone" 
                       dataKey="value" 
                       name={selectedIndicator} 
-                      stroke="#3b82f6" 
+                      stroke="#2B6CB0" 
                       strokeWidth={3}
                       fillOpacity={1} 
                       fill="url(#colorValue)" 

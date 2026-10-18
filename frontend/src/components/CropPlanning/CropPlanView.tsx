@@ -15,7 +15,7 @@ interface Props {
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const PRIORITY_COLOR: Record<string, string> = { high: '#f87171', medium: '#fbbf24', low: '#34d399' };
+const PRIORITY_COLOR: Record<string, string> = { high: '#C0392B', medium: '#E09B12', low: '#2F7D32' };
 const TASK_TYPE_ICON: Record<string, string> = {
   irrigation: '💧', fertilizer: '🌿', monitoring: '🔍', soil: '🚜',
   sowing: '🌱', harvest: '✂️', postharvest: '📦',
@@ -52,7 +52,7 @@ function LifecycleTimeline({ stages, currentStage, totalDays, currentDay }: {
       {/* Overall progress bar */}
       <div className="mb-4">
         <div className="progress-bar-track h-2 mb-1">
-          <div className="progress-bar-fill h-full" style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, #059669, #34d399)', boxShadow: '0 0 8px rgba(52,211,153,0.4)' }} />
+          <div className="progress-bar-fill h-full" style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, #2F7D32, #2F7D32)', boxShadow: '0 0 8px rgba(47,125,50,0.4)' }} />
         </div>
         <div className="flex justify-between text-[10px] text-neutral-600">
           <span>Planting</span>
@@ -72,8 +72,8 @@ function LifecycleTimeline({ stages, currentStage, totalDays, currentDay }: {
             return (
               <div key={stage} className="flex-1 flex flex-col items-center" style={{ minWidth: 0 }}>
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold z-10 transition-all ${
-                  isDone ? 'bg-emerald-500 text-white' :
-                  isCurrent ? 'bg-emerald-400 text-black ring-2 ring-emerald-400/40 ring-offset-1 ring-offset-black' :
+                  isDone ? 'bg-emerald-500 text-cream' :
+                  isCurrent ? 'bg-emerald-400 text-cream ring-2 ring-emerald-400/40 ring-offset-1 ring-offset-cream' :
                   'bg-neutral-800 text-neutral-600 border border-white/5'
                 }`}>
                   {isDone ? '✓' : isCurrent ? '●' : idx + 1}
@@ -138,7 +138,7 @@ function TaskCard({ task, planId, onUpdate }: { task: Task; planId: string; onUp
             isCompleted ? 'bg-emerald-500 border-emerald-500' : 'border-white/20 hover:border-emerald-400'
           }`}
         >
-          {updating ? <Loader2 size={10} className="animate-spin text-white" /> : isCompleted ? <CheckCircle size={12} className="text-white" /> : null}
+          {updating ? <Loader2 size={10} className="animate-spin text-cream" /> : isCompleted ? <CheckCircle size={12} className="text-cream" /> : null}
         </button>
 
         <div className="flex-1 min-w-0">
@@ -195,8 +195,8 @@ function TaskCard({ task, planId, onUpdate }: { task: Task; planId: string; onUp
 }
 
 function NotificationCard({ notif }: { notif: Notification }) {
-  const bgColor = notif.type === 'weather_alert' ? 'rgba(59,130,246,0.08)' : 'rgba(251,191,36,0.08)';
-  const borderColor = notif.type === 'weather_alert' ? 'rgba(59,130,246,0.2)' : 'rgba(251,191,36,0.2)';
+  const bgColor = notif.type === 'weather_alert' ? 'rgba(58,134,200,0.08)' : 'rgba(242,167,27,0.08)';
+  const borderColor = notif.type === 'weather_alert' ? 'rgba(58,134,200,0.2)' : 'rgba(242,167,27,0.2)';
   return (
     <div className="rounded-xl p-3 animate-slide-up" style={{ background: bgColor, border: `1px solid ${borderColor}` }}>
       <div className="flex items-start gap-2.5">
@@ -219,6 +219,7 @@ function NotificationCard({ notif }: { notif: Notification }) {
 export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props) {
   const [plan, setPlanLocal] = useState<ActivePlan>(initialPlan);
   const [activeTab, setActiveTab] = useState<'tasks' | 'irrigation' | 'fertilizer' | 'pest' | 'market' | 'history'>('tasks');
+  const [selectedMarket, setSelectedMarket] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simResult, setSimResult] = useState<{ changes: string[]; version: number } | null>(null);
   const [soldStatus, setSoldStatus] = useState(false);
@@ -277,7 +278,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
   const pestRisk = plan.pest_risk || 'Low';
   const weatherRisk = plan.weather_risk || 'Low';
 
-  const RISK_COLOR: Record<string, string> = { Low: '#34d399', Medium: '#fbbf24', High: '#f87171' };
+  const RISK_COLOR: Record<string, string> = { Low: '#2F7D32', Medium: '#E09B12', High: '#C0392B' };
 
   const TABS = [
     { id: 'tasks', label: "Today's Tasks", icon: <CheckCircle size={13} /> },
@@ -293,9 +294,9 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
     return (
       <div className="animate-fade-in max-w-3xl mx-auto">
         <div className="glass-card p-8 text-center mb-6"
-          style={{ boxShadow: '0 0 60px -20px rgba(52,211,153,0.3)' }}>
+          style={{ boxShadow: '0 0 60px -20px rgba(47,125,50,0.3)' }}>
           <div className="text-6xl mb-4">🎉</div>
-          <h1 className="text-3xl font-bold text-neutral-100 mb-2" style={{ fontFamily: 'Space Grotesk' }}>
+          <h1 className="text-3xl font-bold text-neutral-100 mb-2" style={{ fontFamily: 'Baloo 2' }}>
             Crop Cycle Complete!
           </h1>
           <p className="text-emerald-400 font-semibold text-lg mb-1">{soldReport.final_status || 'Crop Sold ✓'}</p>
@@ -319,7 +320,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               { label: 'Est. Revenue', value: soldReport.estimated_revenue_inr ? `₹${soldReport.estimated_revenue_inr.toLocaleString('en-IN')}` : 'N/A', icon: '💰' },
             ].map(item => (
               <div key={item.label} className="p-3 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                style={{ background: 'rgba(59,42,26,0.03)', border: '1px solid rgba(59,42,26,0.06)' }}>
                 <div className="text-xl mb-1">{item.icon}</div>
                 <div className="text-xs text-neutral-500 mb-0.5">{item.label}</div>
                 <div className="text-sm font-bold text-neutral-100">{item.value}</div>
@@ -327,7 +328,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
             ))}
           </div>
           <div className="p-3 rounded-xl text-[10px] text-neutral-600"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+            style={{ background: 'rgba(59,42,26,0.02)', border: '1px solid rgba(59,42,26,0.04)' }}>
             ℹ️ Revenue estimates are DEMO DATA based on typical market prices. Actual prices may vary.
           </div>
         </div>
@@ -344,7 +345,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
           <div className="flex items-center gap-4">
             <div className="text-4xl">{plan.crop_icon}</div>
             <div>
-              <h1 className="text-xl font-bold text-neutral-100" style={{ fontFamily: 'Space Grotesk' }}>
+              <h1 className="text-xl font-bold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>
                 {plan.crop_name} — {plan.farm.farm_name}
               </h1>
               <div className="flex items-center gap-3 text-xs text-neutral-500 mt-0.5 flex-wrap">
@@ -377,7 +378,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
 
       {/* ── Weather Simulation (HERO FEATURE) ── */}
       <div className="glass-card p-5 mb-5"
-        style={{ background: 'linear-gradient(135deg, rgba(59,130,246,0.06), rgba(99,102,241,0.04))', border: '1px solid rgba(59,130,246,0.12)' }}>
+        style={{ background: 'linear-gradient(135deg, rgba(58,134,200,0.06), rgba(126,87,194,0.04))', border: '1px solid rgba(58,134,200,0.12)' }}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-sm font-bold text-neutral-200 mb-1 flex items-center gap-2">
@@ -398,7 +399,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               onClick={() => handleSimulateWeather('heavy_rain')}
               disabled={isSimulating}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
-              style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#60a5fa' }}
+              style={{ background: 'rgba(58,134,200,0.15)', border: '1px solid rgba(58,134,200,0.3)', color: '#3A86C8' }}
             >
               {isSimulating ? <Loader2 size={12} className="animate-spin" /> : <CloudRain size={12} />}
               🌧️ Simulate Heavy Rain
@@ -408,7 +409,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               onClick={() => handleSimulateWeather('drought')}
               disabled={isSimulating}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
-              style={{ background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)', color: '#fb923c' }}
+              style={{ background: 'rgba(240,127,26,0.12)', border: '1px solid rgba(240,127,26,0.25)', color: '#E07A1F' }}
             >
               <Sun size={12} /> ☀️ Simulate Drought
             </button>
@@ -418,7 +419,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
         {/* Simulation Result */}
         {simResult && (
           <div className="mt-4 p-3 rounded-xl animate-slide-up"
-            style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
+            style={{ background: 'rgba(58,134,200,0.08)', border: '1px solid rgba(58,134,200,0.2)' }}>
             <p className="text-xs font-semibold text-blue-400 mb-2">🔄 Plan Updated — Version {simResult.version}</p>
             <div className="space-y-1">
               {simResult.changes.map((c, i) => (
@@ -446,7 +447,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
             <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Crop Progress</h3>
             <div className="text-3xl font-bold text-emerald-400 mb-1">{progressPct}%</div>
             <div className="progress-bar-track h-2 mb-2">
-              <div className="progress-bar-fill" style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, #059669, #34d399)' }} />
+              <div className="progress-bar-fill" style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg, #2F7D32, #2F7D32)' }} />
             </div>
             <p className="text-xs text-neutral-600">{completedCount} of {plan.tasks.length} tasks done</p>
           </div>
@@ -476,7 +477,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
               ].map(r => (
                 <div key={r.label} className="flex items-center justify-between">
                   <span className="text-xs text-neutral-500">{r.icon} {r.label}</span>
-                  <span className="text-xs font-bold" style={{ color: RISK_COLOR[r.value] || '#9ca3af' }}>{r.value}</span>
+                  <span className="text-xs font-bold" style={{ color: RISK_COLOR[r.value] || '#94806A' }}>{r.value}</span>
                 </div>
               ))}
             </div>
@@ -487,8 +488,8 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
             <button
               id="mark-sold-btn"
               onClick={handleMarkSold}
-              className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg, #d97706, #b45309)', boxShadow: '0 6px 20px rgba(217,119,6,0.25)' }}
+              className="w-full py-3 rounded-xl text-sm font-bold text-cream transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{ background: 'linear-gradient(135deg, #d97706, #b45309)', boxShadow: '0 6px 20px rgba(242,167,27,0.25)' }}
             >
               🏪 Mark Crop as Sold
             </button>
@@ -601,8 +602,8 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                   {[
                     { label: 'Overall Pest Risk', value: pestRisk, desc: 'Based on weather and crop stage', icon: '🐛', color: RISK_COLOR[pestRisk] },
-                    { label: 'Fungal Risk', value: (plan.weather.rain_probability ?? 20) > 70 ? 'High' : 'Low', desc: 'Based on humidity', icon: '🍄', color: (plan.weather.rain_probability ?? 20) > 70 ? '#f87171' : '#34d399' },
-                    { label: 'Insect Risk', value: (plan.weather.temperature ?? 30) > 28 ? 'Medium' : 'Low', desc: 'Based on temperature', icon: '🦗', color: (plan.weather.temperature ?? 30) > 28 ? '#fbbf24' : '#34d399' },
+                    { label: 'Fungal Risk', value: (plan.weather.rain_probability ?? 20) > 70 ? 'High' : 'Low', desc: 'Based on humidity', icon: '🍄', color: (plan.weather.rain_probability ?? 20) > 70 ? '#C0392B' : '#2F7D32' },
+                    { label: 'Insect Risk', value: (plan.weather.temperature ?? 30) > 28 ? 'Medium' : 'Low', desc: 'Based on temperature', icon: '🦗', color: (plan.weather.temperature ?? 30) > 28 ? '#E09B12' : '#2F7D32' },
                   ].map(r => (
                     <div key={r.label} className="rounded-xl p-3.5 border border-white/5 bg-white/3 text-center">
                       <div className="text-2xl mb-2">{r.icon}</div>
@@ -614,7 +615,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                 </div>
 
                 <div className="rounded-xl p-4"
-                  style={{ background: 'rgba(248,113,113,0.04)', border: '1px solid rgba(248,113,113,0.1)' }}>
+                  style={{ background: 'rgba(192,57,43,0.04)', border: '1px solid rgba(192,57,43,0.1)' }}>
                   <h4 className="text-xs font-semibold text-neutral-300 mb-2">Current Conditions Assessment</h4>
                   <p className="text-xs text-neutral-400 leading-relaxed">
                     {pestRisk === 'High'
@@ -639,10 +640,10 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                   {[
-                    { label: 'Est. Yield', value: `${plan.estimated_yield_t} t`, icon: '📊', color: '#34d399' },
-                    { label: 'Est. Price', value: `₹${(plan.market_info?.estimated_price_inr_per_tonne || 20000).toLocaleString('en-IN')}/t`, icon: '💰', color: '#fbbf24' },
-                    { label: 'Est. Revenue', value: `₹${(plan.market_info?.estimated_revenue_inr || 0).toLocaleString('en-IN')}`, icon: '📈', color: '#60a5fa' },
-                    { label: 'Nearest Market', value: `~${plan.market_info?.transport_distance_km || 25} km`, icon: '🚚', color: '#fb923c' },
+                    { label: 'Est. Yield', value: `${plan.estimated_yield_t} t`, icon: '📊', color: '#2F7D32' },
+                    { label: 'Est. Price', value: `₹${(plan.market_info?.estimated_price_inr_per_tonne || 20000).toLocaleString('en-IN')}/t`, icon: '💰', color: '#E09B12' },
+                    { label: 'Est. Revenue', value: `₹${(plan.market_info?.estimated_revenue_inr || 0).toLocaleString('en-IN')}`, icon: '📈', color: '#3A86C8' },
+                    { label: 'Nearest Market', value: `~${plan.market_info?.transport_distance_km || 25} km`, icon: '🚚', color: '#E07A1F' },
                   ].map(item => (
                     <div key={item.label} className="glass-card p-3 text-center">
                       <div className="text-xl mb-1">{item.icon}</div>
@@ -656,7 +657,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                   <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Nearby Market Options</h4>
                   {(plan.market_info?.nearby_markets || ['Local Mandi', 'APMC Market', 'FPO']).map((market: string, i: number) => (
                     <div key={i} className="flex items-center justify-between p-3 rounded-xl"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      style={{ background: 'rgba(59,42,26,0.03)', border: '1px solid rgba(59,42,26,0.06)' }}>
                       <div className="flex items-center gap-2.5">
                         <span className="text-lg">🏪</span>
                         <div>
@@ -664,22 +665,28 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                           <div className="text-[10px] text-neutral-600">DEMO DATA · Price data unavailable</div>
                         </div>
                       </div>
-                      <button className="text-[10px] px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">
-                        Select
+                      <button
+                        onClick={() => setSelectedMarket(m => (m === market ? null : market))}
+                        aria-pressed={selectedMarket === market}
+                        className={`text-[10px] px-2.5 py-1 rounded-lg border font-medium transition-colors ${selectedMarket === market
+                          ? 'bg-emerald-500 text-cream border-emerald-500'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'}`}
+                      >
+                        {selectedMarket === market ? 'Selected ✓' : 'Select'}
                       </button>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-4 p-3 rounded-xl text-[10px] text-neutral-600"
-                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  style={{ background: 'rgba(59,42,26,0.02)', border: '1px solid rgba(59,42,26,0.04)' }}>
                   ℹ️ Market prices, revenue estimates, and transportation data shown here are DEMO DATA. Actual prices vary by location, season, and market conditions. Check eNAM or local mandi rates before selling.
                 </div>
 
                 {!soldStatus && (
                   <button onClick={handleMarkSold}
-                    className="mt-4 w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.01]"
-                    style={{ background: 'linear-gradient(135deg, #d97706, #b45309)', boxShadow: '0 6px 20px rgba(217,119,6,0.2)' }}>
+                    className="mt-4 w-full py-3 rounded-xl text-sm font-bold text-cream transition-all hover:scale-[1.01]"
+                    style={{ background: 'linear-gradient(135deg, #d97706, #b45309)', boxShadow: '0 6px 20px rgba(242,167,27,0.2)' }}>
                     💰 Mark Crop as Sold & Generate Report
                   </button>
                 )}
@@ -699,7 +706,7 @@ export default function CropPlanView({ plan: initialPlan, onPlanUpdate }: Props)
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex items-center gap-2">
                           <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
-                            style={{ background: v.version === plan.plan_version ? '#a855f7' : 'rgba(255,255,255,0.1)', color: v.version === plan.plan_version ? 'white' : '#6b7280' }}>
+                            style={{ background: v.version === plan.plan_version ? '#7E57C2' : 'rgba(59,42,26,0.1)', color: v.version === plan.plan_version ? 'white' : '#857059' }}>
                             {v.version}
                           </span>
                           <div>

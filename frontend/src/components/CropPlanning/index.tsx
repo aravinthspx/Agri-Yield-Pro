@@ -219,11 +219,11 @@ export default function CropPlanning() {
   const currentStepIdx = STEPS.indexOf(step);
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #050a0e 0%, #061020 50%, #050a0e 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #FBF6EA 0%, #F7EFDD 50%, #FBF6EA 100%)' }}>
       {/* Ambient */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div className="absolute top-[-10%] right-[20%] w-[600px] h-[600px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(34,197,94,0.04) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[10%] left-[10%] w-[400px] h-[400px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.03) 0%, transparent 70%)' }} />
+        <div className="absolute top-[-10%] right-[20%] w-[600px] h-[600px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(47,125,50,0.04) 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[10%] left-[10%] w-[400px] h-[400px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(240,127,26,0.03) 0%, transparent 70%)' }} />
       </div>
 
       <div className="relative z-10 px-4 md:px-6 py-6 max-w-[1600px] mx-auto">
@@ -242,7 +242,7 @@ export default function CropPlanning() {
                   }`}
                 >
                   <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    idx < currentStepIdx ? 'bg-emerald-500/30 text-emerald-400' : idx === currentStepIdx ? 'bg-emerald-500 text-white' : 'bg-white/5 text-neutral-600'
+                    idx < currentStepIdx ? 'bg-emerald-500/30 text-emerald-400' : idx === currentStepIdx ? 'bg-emerald-500 text-cream' : 'bg-white/5 text-neutral-600'
                   }`}>{idx < currentStepIdx ? '✓' : idx + 1}</span>
                   {label}
                 </div>

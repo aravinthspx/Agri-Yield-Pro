@@ -21,7 +21,7 @@ const SCI_FI_STYLE = {
       id: 'background',
       type: 'background',
       paint: {
-        'background-color': '#0a0f1d' // Deep oceanic blue/black
+        'background-color': '#FFFDF7' // Deep oceanic blue/black
       }
     },
     // Outer heavy glow
@@ -30,7 +30,7 @@ const SCI_FI_STYLE = {
       type: 'line',
       source: 'india-border',
       paint: {
-        'line-color': '#06b6d4',
+        'line-color': '#1E8C9E',
         'line-width': 18,
         'line-opacity': 0.15,
         'line-blur': 12
@@ -42,7 +42,7 @@ const SCI_FI_STYLE = {
       type: 'line',
       source: 'india-border',
       paint: {
-        'line-color': '#06b6d4',
+        'line-color': '#1E8C9E',
         'line-width': 8,
         'line-opacity': 0.3,
         'line-blur': 4
@@ -54,7 +54,7 @@ const SCI_FI_STYLE = {
       type: 'line',
       source: 'india-border',
       paint: {
-        'line-color': '#22d3ee',
+        'line-color': '#1E8C9E',
         'line-width': 1.5,
         'line-opacity': 0.9
       }
@@ -65,7 +65,7 @@ const SCI_FI_STYLE = {
       type: 'fill',
       source: 'india-border',
       paint: {
-        'fill-color': '#0f172a',
+        'fill-color': '#FFFDF7',
         'fill-opacity': 0.7
       }
     }
@@ -132,7 +132,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#0a0f1d] overflow-hidden font-sans">
+    <div className="fixed inset-0 z-[100] bg-[#FFFDF7] overflow-hidden font-sans">
       <Map
         ref={mapRef}
         mapLib={maplibregl as any}
@@ -159,7 +159,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
       >
         {/* Holographic Grid Overlay */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: 'linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(30,140,158,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(30,140,158,0.05) 1px, transparent 1px)',
           backgroundSize: '40px 40px'
         }} />
 
@@ -181,7 +181,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
                 id="network-glow"
                 type="line"
                 paint={{
-                  'line-color': '#f43f5e',
+                  'line-color': '#C2185B',
                   'line-width': 4,
                   'line-opacity': 0.3,
                   'line-blur': 4
@@ -191,7 +191,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
                 id="network-core"
                 type="line"
                 paint={{
-                  'line-color': '#fb7185',
+                  'line-color': '#C2185B',
                   'line-width': 1,
                   'line-opacity': 0.8
                 }}
@@ -202,8 +202,8 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
               <Marker key={node.id} longitude={node.lon} latitude={node.lat} anchor="center">
                 <div className="relative flex items-center justify-center">
                   <div className="absolute w-12 h-12 bg-cyan-500/20 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
-                  <div className="absolute w-4 h-4 bg-cyan-400 rounded-full shadow-[0_0_15px_#22d3ee]" />
-                  <div className="absolute w-2 h-2 bg-white rounded-full" />
+                  <div className="absolute w-4 h-4 bg-cyan-400 rounded-full shadow-[0_0_15px_#1E8C9E]" />
+                  <div className="absolute w-2 h-2 bg-cream rounded-full" />
                   <div className="absolute top-6 whitespace-nowrap text-[10px] tracking-widest text-cyan-200 font-bold bg-black/50 px-2 py-0.5 rounded backdrop-blur border border-cyan-500/30">
                     {node.label}
                   </div>
@@ -219,8 +219,8 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
             type: "FeatureCollection",
             features: [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [[75.7, 12.4], [77.0, 12.0], [78.5, 11.0], [79.8, 11.1]] } }]
           }}>
-            <Layer id="rivers-glow" type="line" paint={{ 'line-color': '#3b82f6', 'line-width': 8, 'line-opacity': 0.4, 'line-blur': 5 }} />
-            <Layer id="rivers-core" type="line" paint={{ 'line-color': '#60a5fa', 'line-width': 2, 'line-opacity': 1 }} />
+            <Layer id="rivers-glow" type="line" paint={{ 'line-color': '#2B6CB0', 'line-width': 8, 'line-opacity': 0.4, 'line-blur': 5 }} />
+            <Layer id="rivers-core" type="line" paint={{ 'line-color': '#3A86C8', 'line-width': 2, 'line-opacity': 1 }} />
           </Source>
         )}
 
@@ -228,11 +228,11 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
         {viewState === 'farm' && (
           <Marker longitude={VIEWS.farm.longitude} latitude={VIEWS.farm.latitude} anchor="bottom">
             <div className="flex flex-col items-center animate-bounce">
-              <div className="bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded shadow-[0_0_15px_#10b981] border border-emerald-300">
+              <div className="bg-emerald-500 text-cream text-xs font-bold px-2 py-1 rounded shadow-[0_0_15px_#2F7D32] border border-emerald-300">
                 MY FARM
               </div>
-              <div className="w-0.5 h-8 bg-emerald-400 shadow-[0_0_10px_#10b981]" />
-              <div className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_15px_#10b981] mt-1" />
+              <div className="w-0.5 h-8 bg-emerald-400 shadow-[0_0_10px_#2F7D32]" />
+              <div className="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_15px_#2F7D32] mt-1" />
             </div>
           </Marker>
         )}
@@ -245,14 +245,14 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
         <div className="flex justify-between items-start">
           <button 
             onClick={onClose}
-            className="pointer-events-auto flex items-center gap-2 px-4 py-2 bg-[#0f172a]/80 hover:bg-[#1e293b] backdrop-blur-xl text-cyan-50 rounded-xl border border-cyan-900/50 transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+            className="pointer-events-auto flex items-center gap-2 px-4 py-2 bg-[#FFFDF7]/80 hover:bg-[#F3EBDA] backdrop-blur-xl text-cyan-50 rounded-xl border border-cyan-900/50 transition-all shadow-[0_0_15px_rgba(30,140,158,0.1)]"
           >
             <ArrowLeft size={18} className="text-cyan-400" />
             <span className="font-medium tracking-wide">SYSTEM DASHBOARD</span>
           </button>
 
           <div className="flex flex-col gap-2">
-            <div className="pointer-events-auto bg-[#0f172a]/80 backdrop-blur-xl rounded-xl border border-cyan-900/50 p-3 space-y-2 shadow-[0_0_20px_rgba(6,182,212,0.1)] w-56">
+            <div className="pointer-events-auto bg-[#FFFDF7]/80 backdrop-blur-xl rounded-xl border border-cyan-900/50 p-3 space-y-2 shadow-[0_0_20px_rgba(30,140,158,0.1)] w-56">
               <div className="text-[10px] font-bold text-cyan-500/70 uppercase tracking-widest mb-3 ml-1">Data Overlays</div>
               {[
                 { id: 'network', icon: <Network size={14} />, label: 'Agri-Data Network' },
@@ -295,8 +295,8 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
                     onClick={() => setViewState(step)}
                     className={`px-4 py-2 rounded-xl backdrop-blur-xl border text-xs font-bold tracking-wider uppercase transition-all ${
                       isActive 
-                        ? 'bg-cyan-950/60 border-cyan-500/50 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)]' 
-                        : 'bg-[#0f172a]/60 border-slate-800 text-slate-400 hover:bg-slate-800'
+                        ? 'bg-cyan-950/60 border-cyan-500/50 text-cyan-300 shadow-[0_0_15px_rgba(30,140,158,0.2)]' 
+                        : 'bg-[#FFFDF7]/60 border-slate-800 text-slate-400 hover:bg-slate-800'
                     }`}
                   >
                     {VIEWS[step].name}
@@ -314,7 +314,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="pointer-events-auto w-[320px] bg-[#0f172a]/90 backdrop-blur-2xl border border-cyan-900/50 rounded-2xl p-5 shadow-[0_0_30px_rgba(6,182,212,0.15)]"
+                className="pointer-events-auto w-[320px] bg-[#FFFDF7]/90 backdrop-blur-2xl border border-cyan-900/50 rounded-2xl p-5 shadow-[0_0_30px_rgba(30,140,158,0.15)]"
               >
                 <div className="flex items-center gap-3 mb-5 border-b border-cyan-900/30 pb-4">
                   <div className="p-2 bg-cyan-950/50 rounded-lg text-cyan-400 border border-cyan-800/50">
@@ -351,7 +351,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
                     }));
                     window.dispatchEvent(new CustomEvent('openAIChat'));
                   }}
-                  className="w-full flex justify-center items-center gap-2 py-3 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 font-bold tracking-widest text-xs uppercase rounded-xl transition-all border border-cyan-700 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                  className="w-full flex justify-center items-center gap-2 py-3 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 font-bold tracking-widest text-xs uppercase rounded-xl transition-all border border-cyan-700 shadow-[0_0_15px_rgba(30,140,158,0.2)]"
                 >
                   <Info size={14} />
                   ENGAGE AI ANALYST
@@ -368,7 +368,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
           onMouseEnter={() => setShowHelp(true)}
           onMouseLeave={() => setShowHelp(false)}
           onClick={() => setShowHelp(!showHelp)}
-          className="w-10 h-10 rounded-full bg-[#0f172a]/80 backdrop-blur-xl border border-cyan-900/50 text-cyan-500 flex items-center justify-center hover:bg-cyan-950 hover:text-cyan-300 transition-all shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+          className="w-10 h-10 rounded-full bg-[#FFFDF7]/80 backdrop-blur-xl border border-cyan-900/50 text-cyan-500 flex items-center justify-center hover:bg-cyan-950 hover:text-cyan-300 transition-all shadow-[0_0_15px_rgba(30,140,158,0.1)]"
         >
           ?
         </button>
@@ -379,7 +379,7 @@ export default function Landscape3D({ onClose }: { onClose: () => void }) {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute bottom-14 right-0 w-64 bg-[#0f172a]/95 backdrop-blur-2xl border border-cyan-900/50 rounded-2xl p-5 shadow-[0_0_30px_rgba(6,182,212,0.2)] origin-bottom-right"
+              className="absolute bottom-14 right-0 w-64 bg-[#FFFDF7]/95 backdrop-blur-2xl border border-cyan-900/50 rounded-2xl p-5 shadow-[0_0_30px_rgba(30,140,158,0.2)] origin-bottom-right"
             >
               <h4 className="text-[10px] font-bold text-cyan-500 tracking-widest uppercase mb-4 border-b border-cyan-900/30 pb-2">Navigation Matrix</h4>
               <div className="space-y-3 text-[11px] text-slate-300 font-mono">

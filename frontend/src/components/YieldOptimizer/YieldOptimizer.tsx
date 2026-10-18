@@ -831,7 +831,7 @@ export default function YieldOptimizer() {
             <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               <Brain size={22} />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white" style={{ fontFamily: 'Space Grotesk' }}>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white" style={{ fontFamily: 'Baloo 2' }}>
               {t.title}
             </h1>
             <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
@@ -1160,7 +1160,7 @@ export default function YieldOptimizer() {
         <div id="optimization-results-section" className="space-y-6 animate-fade-in print:text-black">
           {/* Top Banner Card: Yield Prediction + Classification Badge */}
           <div className="glass-card p-6 md:p-8 rounded-2xl border border-emerald-500/30 shadow-2xl relative overflow-hidden"
-               style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(5,10,14,0.95))' }}>
+               style={{ background: 'linear-gradient(135deg, rgba(47,125,50,0.08), rgba(251,246,234,0.95))' }}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <div className="flex items-center gap-3 mb-2">
@@ -1181,7 +1181,7 @@ export default function YieldOptimizer() {
                 </div>
 
                 <div className="flex items-baseline gap-3">
-                  <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight" style={{ fontFamily: 'Space Grotesk' }}>
+                  <h3 className="text-3xl md:text-5xl font-black text-white tracking-tight" style={{ fontFamily: 'Baloo 2' }}>
                     {result.predicted_yield}
                   </h3>
                   <span className="text-lg md:text-xl font-medium text-neutral-400">

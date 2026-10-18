@@ -9,8 +9,8 @@ interface Props {
 }
 
 const WATER_COLORS: Record<string, string> = {
-  'High': '#60a5fa', 'Very High': '#818cf8', 'Medium-High': '#34d399',
-  'Medium': '#fbbf24', 'Low-Medium': '#fb923c', 'Low': '#f87171',
+  'High': '#3A86C8', 'Very High': '#5C6BC0', 'Medium-High': '#2F7D32',
+  'Medium': '#E09B12', 'Low-Medium': '#E07A1F', 'Low': '#C0392B',
 };
 
 export default function CropList({ category, onSelect }: Props) {
@@ -72,7 +72,7 @@ export default function CropList({ category, onSelect }: Props) {
         <div className="flex items-center gap-3 mb-2">
           <span className="text-3xl">{category.icon}</span>
           <div>
-            <h2 className="text-2xl font-bold text-neutral-100" style={{ fontFamily: 'Space Grotesk' }}>
+            <h2 className="text-2xl font-bold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>
               Select Your Crop
             </h2>
             <p className="text-sm text-neutral-500">
@@ -113,7 +113,7 @@ export default function CropList({ category, onSelect }: Props) {
       {/* Filters expanded */}
       {showFilters && (
         <div className="mb-5 p-4 rounded-xl animate-slide-up"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ background: 'rgba(59,42,26,0.03)', border: '1px solid rgba(59,42,26,0.06)' }}>
           <div className="flex flex-wrap gap-3">
             <div>
               <label className="text-xs text-neutral-500 uppercase tracking-wider block mb-1.5">Growing Season</label>
@@ -191,7 +191,7 @@ export default function CropList({ category, onSelect }: Props) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-neutral-600">Water Need</span>
-                    <span className="font-medium" style={{ color: WATER_COLORS[crop.water_requirement] || '#9ca3af' }}>
+                    <span className="font-medium" style={{ color: WATER_COLORS[crop.water_requirement] || '#94806A' }}>
                       {crop.water_requirement}
                     </span>
                   </div>
@@ -209,7 +209,7 @@ export default function CropList({ category, onSelect }: Props) {
                 <div className="flex flex-wrap gap-1 mb-3">
                   {crop.suitable_seasons.slice(0, 2).map(s => (
                     <span key={s} className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'rgba(34,197,94,0.08)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.15)' }}>
+                      style={{ background: 'rgba(47,125,50,0.08)', color: '#4E9A3A', border: '1px solid rgba(47,125,50,0.15)' }}>
                       {s.split(' ')[0]}
                     </span>
                   ))}

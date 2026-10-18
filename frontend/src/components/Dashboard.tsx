@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Leaf, Droplets, Thermometer, Sprout, AlertTriangle, CloudRain,
-  Activity, CheckCircle, Loader2, MapPin, TrendingUp, TrendingDown,
-  BarChart3, Layers, FlaskConical, Sun, Wind, Calendar, DollarSign,
-  ShieldAlert, Wheat, Zap, ArrowUpRight, ArrowDownRight, RefreshCw,
-  ChevronRight, Info, ShieldCheck, Save, Trash2, Download, Globe2
+  CheckCircle, Loader2, MapPin, BarChart3, Layers, FlaskConical, Wind,
+  Calendar, IndianRupee, ShieldAlert, RefreshCw, Info, ShieldCheck, Save,
+  Trash2, Download, RotateCcw, ChevronDown, Wifi, WifiOff, Circle,
 } from 'lucide-react';
 import {
-  AreaChart, Area, BarChart, Bar, RadarChart, Radar, PolarGrid,
+  ComposedChart, Area, Bar, BarChart, RadarChart, Radar, PolarGrid,
   PolarAngleAxis, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Cell, Legend,
+  Tooltip, ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts';
-import Landscape3D from './Landscape3D/Landscape3D';
+import { API_BASE } from '../config';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,860 +43,919 @@ interface PredictionResult {
   tasks: { type: string; title: string; description: string }[];
 }
 
-interface HistoryPoint {
-  month: string;
-  actual: number;
-  predicted: number;
-  rainfall: number;
-}
+interface HistoryPoint { month: string; actual: number; predicted: number; rainfall: number }
+interface MarketPoint { month: string; price: number; msp: number }
+interface CalendarPhase { phase: string; start: string; end: string; color: string }
+interface CropComparison { crop: string; yield: number; potential: number; color: string }
+interface PlanningCrop { name: string; icon: string; ph_range?: { min: number; max: number } }
 
-interface MarketPoint {
-  month: string;
-  price: number;
-  msp: number;
-}
+type KpiKey = 'yield' | 'total' | 'health' | 'pest';
 
-interface CalendarPhase {
-  phase: string;
-  start: string;
-  end: string;
-  color: string;
-}
+// ─── Constants & farmer-friendly helpers ─────────────────────────────────────
 
-interface CropComparison {
-  crop: string;
-  yield: number;
-  potential: number;
-  color: string;
-}
+const DEFAULTS = { crop: 'Rice', area: 2.5, soilPh: 6.5, nitrogen: 80, phosphorus: 40, potassium: 45 };
+const POPULAR_CROPS = ['Rice', 'Wheat', 'Maize', 'Cotton', 'Sugarcane', 'Groundnut', 'Tomato', 'Chickpea'];
+const FALLBACK_LOCATION = { lat: 28.61, lon: 77.21, name: 'New Delhi (default)' };
+const FARM_PALETTE = ['#2F7D32', '#F2A71B', '#F07F1A', '#8B5A2B', '#3A86C8', '#7E57C2', '#C0392B', '#558B2F'];
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-import { API_BASE } from '../config';
-
-const RISK_COLOR: Record<string, string> = {
-  Low: 'text-emerald-400', Medium: 'text-yellow-400', High: 'text-red-400',
+const TONE = {
+  good: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: '#2F7D32' },
+  warn: { text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/40', dot: '#D98E0B' },
+  bad: { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', dot: '#C0392B' },
+  info: { text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30', dot: '#2B6CB0' },
 };
-const HEALTH_COLOR: Record<string, string> = {
-  Good: 'text-emerald-400', Fair: 'text-yellow-400', Poor: 'text-red-400',
-};
+type Tone = keyof typeof TONE;
 
-// ─── Custom Tooltip ───────────────────────────────────────────────────────────
+const riskTone = (r: string): Tone => (r === 'Low' ? 'good' : r === 'Medium' ? 'warn' : 'bad');
+const healthTone = (h: string): Tone => (h === 'Good' ? 'good' : h === 'Fair' ? 'warn' : 'bad');
+const HEALTH_EMOJI: Record<string, string> = { Good: '😊', Fair: '😐', Poor: '😟' };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-[#0d1117] border border-white/10 rounded-xl p-3 shadow-2xl text-xs">
-        <p className="text-neutral-400 mb-2 font-medium">{label}</p>
-        {payload.map((entry: any, i: number) => (
-          <p key={i} style={{ color: entry.color }} className="font-semibold">
-            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
+const toAcres = (ha: number) => ha * 2.471;
+const tPerHaToQtlPerAcre = (t: number) => (t * 10) / 2.471;
+const rupees = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN');
+const lakhs = (n: number) => (n >= 100000 ? `₹${(n / 100000).toFixed(2)} lakh` : rupees(n));
+const sameCrop = (a: string, b: string) =>
+  a.toLowerCase().replace(/\s*\(.*\)/, '') === b.toLowerCase().replace(/\s*\(.*\)/, '');
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: React.ReactNode;
-  color: string;
-  glow?: string;
-  trend?: 'up' | 'down' | null;
+function getSeason(d = new Date()) {
+  const m = d.getMonth() + 1;
+  if (m >= 6 && m <= 10) return { name: 'Kharif', months: 'Jun – Oct', emoji: '🌧️' };
+  if (m >= 11 || m <= 3) return { name: 'Rabi', months: 'Nov – Mar', emoji: '❄️' };
+  return { name: 'Zaid', months: 'Mar – Jun', emoji: '☀️' };
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, sub, icon, color, glow, trend }) => (
-  <div
-    className="glass-card p-5 relative overflow-hidden group cursor-default"
-    style={{ boxShadow: glow ? `0 0 40px -10px ${glow}` : undefined }}
-  >
-    <div className={`absolute -top-4 -right-4 w-20 h-20 rounded-full blur-2xl opacity-20 ${color.replace('text-', 'bg-')}`} />
-    <div className="relative z-10">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-neutral-500 text-xs font-medium uppercase tracking-wider">{label}</span>
-        <div className={`p-2 rounded-lg bg-white/5 ${color}`}>{icon}</div>
-      </div>
-      <div className={`text-3xl font-bold mb-1 ${color} metric-glow-green`}>{value}</div>
-      {sub && (
-        <div className="flex items-center gap-1 text-xs text-neutral-500">
-          {trend === 'up' && <ArrowUpRight size={12} className="text-emerald-400" />}
-          {trend === 'down' && <ArrowDownRight size={12} className="text-red-400" />}
-          {sub}
-        </div>
-      )}
+function weatherAdvice(w: { temp: number; rainProb: number; windSpeed: number }) {
+  if (w.rainProb >= 60) return { icon: '🌧️', text: 'Rain is likely — skip watering and fertilizer today.' };
+  if (w.temp >= 36) return { icon: '🔥', text: 'Very hot — water early morning or evening only.' };
+  if (w.windSpeed >= 25) return { icon: '💨', text: 'Strong wind — do not spray pesticide today.' };
+  if (w.temp <= 10) return { icon: '🥶', text: 'Cold night ahead — protect young plants.' };
+  return { icon: '☀️', text: 'Good weather for field work today.' };
+}
+
+function phStatus(ph: number, range = { min: 5.5, max: 7.5 }): { tone: Tone; label: string; tip: string } {
+  if (ph < range.min) return { tone: 'warn', label: 'Too sour', tip: `Below ${range.min}. Add agricultural lime to raise pH.` };
+  if (ph > range.max) return { tone: 'warn', label: 'Too salty', tip: `Above ${range.max}. Add gypsum or organic manure.` };
+  return { tone: 'good', label: 'Just right', tip: `Ideal range for this crop is ${range.min} – ${range.max}.` };
+}
+
+const NUTRIENTS = [
+  { key: 'n', label: 'Nitrogen', short: 'N', product: 'Urea', use: 'green leaves & growth', low: 60, high: 140, max: 200, color: '#2F7D32' },
+  { key: 'p', label: 'Phosphorus', short: 'P', product: 'DAP', use: 'strong roots', low: 30, high: 80, max: 120, color: '#3A86C8' },
+  { key: 'k', label: 'Potassium', short: 'K', product: 'MOP / Potash', use: 'grain filling & disease strength', low: 30, high: 90, max: 150, color: '#F07F1A' },
+] as const;
+
+function nutrientStatus(v: number, low: number, high: number): { tone: Tone; label: string } {
+  if (v < low) return { tone: 'warn', label: 'Low' };
+  if (v > high) return { tone: 'bad', label: 'Too much' };
+  return { tone: 'good', label: 'Good' };
+}
+
+const PHASE_TIPS: [RegExp, string][] = [
+  [/prep/i, 'Plough and level the field. Mix in farmyard manure or compost.'],
+  [/sow|plant|transplant/i, 'Use certified seeds and treat them before sowing. Keep proper spacing.'],
+  [/vegetat|growth|tiller/i, 'Remove weeds early. Give nitrogen in 2–3 small doses, not all at once.'],
+  [/reprod|flower|grain|fruit/i, 'Do not let the field dry out. Check for pests twice a week.'],
+  [/harvest/i, 'Harvest when most grains/fruits are mature. Dry well before storing or selling.'],
+];
+const phaseTip = (p: string) => PHASE_TIPS.find(([re]) => re.test(p))?.[1] ?? 'Follow local Krishi Vigyan Kendra advice for this stage.';
+
+// ─── Small UI pieces ─────────────────────────────────────────────────────────
+
+const ChartTooltip = ({ active, payload, label }: any) =>
+  active && payload?.length ? (
+    <div className="bg-paper border border-neutral-800 rounded-xl p-3 shadow-lg text-xs">
+      <p className="text-neutral-400 mb-1.5 font-semibold">{label}</p>
+      {payload.map((e: any, i: number) => (
+        <p key={i} style={{ color: e.color }} className="font-semibold">
+          {e.name}: {typeof e.value === 'number' ? e.value.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : e.value}
+        </p>
+      ))}
     </div>
-  </div>
-);
+  ) : null;
 
-// ─── Progress Bar ─────────────────────────────────────────────────────────────
-
-const FactorBar: React.FC<{ label: string; value: number; color: string }> = ({ label, value, color }) => (
-  <div>
-    <div className="flex justify-between text-xs mb-1.5">
-      <span className="text-neutral-400 font-medium">{label}</span>
-      <span className="font-semibold text-neutral-200">{value}%</span>
-    </div>
-    <div className="progress-bar-track h-1.5">
-      <div
-        className="progress-bar-fill"
-        style={{ width: `${value}%`, background: color, boxShadow: `0 0 8px ${color}60` }}
-      />
-    </div>
-  </div>
-);
-
-// ─── Section Header ───────────────────────────────────────────────────────────
-
-const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; sub?: string; color?: string }> = ({
-  icon, title, sub, color = 'text-emerald-400',
+const CardTitle: React.FC<{ icon: React.ReactNode; title: string; sub?: string; tone?: string; right?: React.ReactNode }> = ({
+  icon, title, sub, tone = 'text-emerald-400 bg-emerald-500/10', right,
 }) => (
-  <div className="flex items-center gap-3 mb-5">
-    <div className={`p-2 rounded-xl bg-white/5 ${color}`}>{icon}</div>
-    <div>
-      <h2 className="text-base font-semibold text-neutral-100">{title}</h2>
-      {sub && <p className="text-xs text-neutral-500">{sub}</p>}
+  <div className="flex items-start justify-between gap-3 mb-4">
+    <div className="flex items-center gap-3 min-w-0">
+      <div className={`p-2 rounded-xl shrink-0 ${tone}`}>{icon}</div>
+      <div className="min-w-0">
+        <h2 className="text-lg font-bold text-neutral-100 leading-tight" style={{ fontFamily: 'Baloo 2' }}>{title}</h2>
+        {sub && <p className="text-sm text-neutral-500 truncate">{sub}</p>}
+      </div>
     </div>
+    {right}
+  </div>
+);
+
+const Tag: React.FC<{ tone: Tone; children: React.ReactNode }> = ({ tone, children }) => (
+  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${TONE[tone].bg} ${TONE[tone].text} ${TONE[tone].border}`}>
+    {children}
+  </span>
+);
+
+const SliderField: React.FC<{
+  id: string; label: React.ReactNode; value: number; min: number; max: number; step: number;
+  onChange: (v: number) => void; suffix?: string; hint?: React.ReactNode; tag?: React.ReactNode;
+}> = ({ id, label, value, min, max, step, onChange, suffix, hint, tag }) => (
+  <div>
+    <div className="flex items-center justify-between gap-2 mb-1.5">
+      <label htmlFor={id} className="text-sm font-semibold text-neutral-300">{label}</label>
+      <div className="flex items-center gap-2">
+        {tag}
+        <div className="flex items-center rounded-lg border border-neutral-800 bg-white/0 focus-within:border-emerald-400">
+          <input
+            id={id} type="number" min={min} max={max} step={step} value={Number.isFinite(value) ? value : ''}
+            onChange={e => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) onChange(v); }}
+            className="w-16 bg-transparent text-right text-sm font-bold text-neutral-100 px-2 py-1 outline-none"
+          />
+          {suffix && <span className="text-xs text-neutral-500 pr-2">{suffix}</span>}
+        </div>
+      </div>
+    </div>
+    <input
+      type="range" className="farm-range" aria-label={typeof label === 'string' ? label : id}
+      min={min} max={max} step={step} value={value} onChange={e => onChange(parseFloat(e.target.value))}
+    />
+    {hint && <p className="text-xs text-neutral-500 mt-1">{hint}</p>}
   </div>
 );
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [availableCrops, setAvailableCrops] = useState<string[]>(['Rice', 'Wheat', 'Maize (Corn)', 'Sugarcane', 'Cotton']);
-  // ── Farm Inputs ──
-  const [crop, setCrop] = useState('Rice');
-  const [area, setArea] = useState(2.5);
-  const [soilPh, setSoilPh] = useState(6.5);
-  const [nitrogen, setNitrogen] = useState(80);
-  const [phosphorus, setPhosphorus] = useState(40);
-  const [potassium, setPotassium] = useState(45);
+  const [planningCrops, setPlanningCrops] = useState<PlanningCrop[]>([]);
+  const [showAllCrops, setShowAllCrops] = useState(false);
 
-  // ── Weather ──
+  // ── Farm inputs ──
+  const [crop, setCrop] = useState(DEFAULTS.crop);
+  const [area, setArea] = useState(DEFAULTS.area);
+  const [soilPh, setSoilPh] = useState(DEFAULTS.soilPh);
+  const [nitrogen, setNitrogen] = useState(DEFAULTS.nitrogen);
+  const [phosphorus, setPhosphorus] = useState(DEFAULTS.phosphorus);
+  const [potassium, setPotassium] = useState(DEFAULTS.potassium);
+  const [autoUpdate, setAutoUpdate] = useState(true);
+
+  // ── Weather & status ──
   const [weather, setWeather] = useState({ temp: 30, rainProb: 20, rainfall: 0, windSpeed: 12, humidity: 65 });
-  const [locationName, setLocationName] = useState('Detecting location...');
+  const [locationName, setLocationName] = useState('Finding your location…');
   const [isWeatherLoading, setIsWeatherLoading] = useState(true);
+  const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   // ── Results ──
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<PredictionResult | null>(null);
+  const [analysisError, setAnalysisError] = useState('');
+  const [openKpi, setOpenKpi] = useState<KpiKey | null>(null);
   const [activeTab, setActiveTab] = useState<'plan' | 'soil'>('plan');
+  const [doneTasks, setDoneTasks] = useState<Set<string>>(new Set());
 
-  // ── Secondary Data ──
+  // ── Secondary data ──
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [market, setMarket] = useState<MarketPoint[]>([]);
   const [calendar, setCalendar] = useState<CalendarPhase[]>([]);
   const [comparison, setComparison] = useState<CropComparison[]>([]);
   const [isLoadingSecondary, setIsLoadingSecondary] = useState(false);
-
-  // ── MoSPI Data ──
+  const [series, setSeries] = useState({ actual: true, predicted: true, rainfall: false });
+  const [selectedPhase, setSelectedPhase] = useState(0);
   const [mospiSummary, setMospiSummary] = useState<any>(null);
 
-  // ── Saved Plans ──
+  // ── Saved plans ──
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveName, setSaveName] = useState("");
+  const [saveName, setSaveName] = useState('');
   const [showSaveModal, setShowSaveModal] = useState(false);
-  
-  // ── 3D Map State removed ──
+  const [toast, setToast] = useState('');
 
-  const prevCrop = useRef(crop);
+  const requestId = useRef(0);
+  const weatherRef = useRef<HTMLDivElement>(null);
+  const season = useMemo(() => getSeason(), []);
+  const farmerName = useMemo(() => {
+    try { return (JSON.parse(localStorage.getItem('user') || '{}').full_name || '').split(' ')[0]; } catch { return ''; }
+  }, []);
 
-  // ── Fetch Saved Plans ──
+  const showToast = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(''), 2500); };
+
+  // ── API health ──
+  const checkApi = useCallback(async () => {
+    setApiStatus('checking');
+    try {
+      const r = await fetch(`${API_BASE}/api/health`);
+      setApiStatus(r.ok ? 'online' : 'offline');
+    } catch { setApiStatus('offline'); }
+  }, []);
+  useEffect(() => { checkApi(); }, [checkApi]);
+
+  // ── Saved plans ──
   const fetchSavedPlans = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/saved-predictions`);
       const data = await res.json();
       setSavedPlans(data.plans || []);
-    } catch (err) {
-      console.error("Failed to fetch saved plans", err);
-    }
+    } catch (err) { console.error('Failed to fetch saved plans', err); }
   }, []);
-
-  useEffect(() => {
-    fetchSavedPlans();
-  }, [fetchSavedPlans]);
+  useEffect(() => { fetchSavedPlans(); }, [fetchSavedPlans]);
 
   const handleSavePlan = async () => {
-    if (!results || !saveName) return;
+    if (!results || !saveName.trim()) return;
     setIsSaving(true);
     try {
       await fetch(`${API_BASE}/api/saved-predictions`, {
-        method: "POST",
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: saveName,
-          crop,
-          area,
-          soil_ph: soilPh,
-          nitrogen,
-          phosphorus,
-          potassium,
-          expected_yield: results.expected_yield,
-          crop_health: results.crop_health,
-        })
+          name: saveName.trim(), crop, area, soil_ph: soilPh, nitrogen, phosphorus, potassium,
+          expected_yield: results.expected_yield, crop_health: results.crop_health,
+        }),
       });
-      setSaveName("");
+      setSaveName('');
       setShowSaveModal(false);
       fetchSavedPlans();
-    } catch (err) {
-      alert("Failed to save plan.");
-    } finally {
-      setIsSaving(false);
-    }
+      showToast('Saved! You can load it any time from "My saved fields".');
+    } catch { showToast('Could not save. Please check the server is running.'); }
+    finally { setIsSaving(false); }
   };
 
   const handleLoadPlan = (plan: SavedPlan) => {
-    setCrop(plan.crop);
-    setArea(plan.area);
-    setSoilPh(plan.soil_ph);
-    setNitrogen(plan.nitrogen);
-    setPhosphorus(plan.phosphorus);
-    setPotassium(plan.potassium);
+    setCrop(plan.crop); setArea(plan.area); setSoilPh(plan.soil_ph);
+    setNitrogen(plan.nitrogen); setPhosphorus(plan.phosphorus); setPotassium(plan.potassium);
+    showToast(`Loaded "${plan.name}"`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDeletePlan = async (id: number) => {
+  const handleDeletePlan = async (plan: SavedPlan) => {
+    if (!window.confirm(`Delete "${plan.name}"?`)) return;
     try {
-      await fetch(`${API_BASE}/api/saved-predictions/${id}`, { method: "DELETE" });
+      await fetch(`${API_BASE}/api/saved-predictions/${plan.id}`, { method: 'DELETE' });
       fetchSavedPlans();
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  // ── Fetch Available Crops ──
+  const handleReset = () => {
+    setCrop(DEFAULTS.crop); setArea(DEFAULTS.area); setSoilPh(DEFAULTS.soilPh);
+    setNitrogen(DEFAULTS.nitrogen); setPhosphorus(DEFAULTS.phosphorus); setPotassium(DEFAULTS.potassium);
+  };
+
+  // ── Crops list ──
   useEffect(() => {
     fetch(`${API_BASE}/api/planning/crops`)
       .then(r => r.json())
-      .then(data => {
-        if (data.crops && data.crops.length > 0) {
-          const names = data.crops.map((c: any) => c.name).sort();
-          setAvailableCrops(names);
-        }
-      })
+      .then(data => { if (data.crops?.length) setPlanningCrops(data.crops); })
       .catch(() => {});
   }, []);
 
-  // ── Fetch Weather ──
-  useEffect(() => {
+  const cropNames = useMemo(
+    () => (planningCrops.length ? planningCrops.map(c => c.name).sort() : POPULAR_CROPS),
+    [planningCrops],
+  );
+  const cropInfo = planningCrops.find(c => c.name === crop);
+  const chipCrops = useMemo(() => {
+    const base = POPULAR_CROPS.filter(c => cropNames.includes(c));
+    return base.includes(crop) ? base : [...base, crop];
+  }, [cropNames, crop]);
+  const iconFor = (name: string) => planningCrops.find(c => c.name === name)?.icon ?? '🌱';
+
+  const pickCrop = (name?: string) => {
+    if (!name) return;
+    const match = cropNames.find(c => sameCrop(c, name));
+    if (match) setCrop(match);
+  };
+
+  // ── Weather ──
+  const loadWeather = useCallback(() => {
+    setIsWeatherLoading(true);
+    const fetchFor = async (lat: number, lon: number, name: string) => {
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,relative_humidity_2m&timezone=auto`;
+        const d = await (await fetch(url)).json();
+        setWeather({
+          temp: d.current.temperature_2m,
+          rainProb: d.current.precipitation_probability ?? (d.current.precipitation > 0 ? 80 : 10),
+          rainfall: d.current.precipitation,
+          windSpeed: d.current.wind_speed_10m ?? 12,
+          humidity: d.current.relative_humidity_2m ?? 65,
+        });
+        setLocationName(name);
+      } catch {
+        setLocationName('Weather unavailable — using typical values');
+      } finally {
+        setIsWeatherLoading(false);
+      }
+    };
     if (!navigator.geolocation) {
-      setLocationName('Geolocation not supported');
-      setIsWeatherLoading(false);
+      fetchFor(FALLBACK_LOCATION.lat, FALLBACK_LOCATION.lon, FALLBACK_LOCATION.name);
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      async ({ coords: { latitude, longitude } }) => {
-        try {
-          const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,relative_humidity_2m&timezone=auto`;
-          const res = await fetch(url);
-          const d = await res.json();
-          setLocationName(`Lat: ${latitude.toFixed(2)}, Lon: ${longitude.toFixed(2)}`);
-          setWeather({
-            temp: d.current.temperature_2m,
-            rainProb: d.current.precipitation_probability ?? (d.current.precipitation > 0 ? 80 : 10),
-            rainfall: d.current.precipitation,
-            windSpeed: d.current.wind_speed_10m ?? 12,
-            humidity: d.current.relative_humidity_2m ?? 65,
-          });
-        } catch {
-          setLocationName('Default: New Delhi, India');
-        } finally {
-          setIsWeatherLoading(false);
-        }
-      },
-      () => {
-        setLocationName('Location blocked — Default: New Delhi, India');
-        setIsWeatherLoading(false);
-      }
+      ({ coords: { latitude, longitude } }) =>
+        fetchFor(latitude, longitude, `Your farm (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`),
+      () => fetchFor(FALLBACK_LOCATION.lat, FALLBACK_LOCATION.lon, `${FALLBACK_LOCATION.name} — allow location for your farm`),
+      { timeout: 8000 },
     );
   }, []);
+  useEffect(() => { loadWeather(); }, [loadWeather]);
 
-  // ── Fetch MoSPI Summary ──
+  // ── MoSPI summary ──
   useEffect(() => {
     fetch(`${API_BASE}/api/official-data/dashboard-summary`)
-      .then(res => res.json())
-      .then(data => setMospiSummary(data))
-      .catch(() => {});
+      .then(res => res.json()).then(setMospiSummary).catch(() => {});
   }, []);
 
-  // ── Dispatch Farm Context to AIChatBox ──
+  // ── Share farm context with the AI chat box ──
   useEffect(() => {
-    const event = new CustomEvent('updateFarmContext', {
+    window.dispatchEvent(new CustomEvent('updateFarmContext', {
       detail: {
-        crop,
-        area,
-        soil_ph: soilPh,
-        nitrogen,
-        phosphorus,
-        potassium,
-        temperature: weather.temp,
-        rain_probability: weather.rainProb,
-      }
-    });
-    window.dispatchEvent(event);
+        crop, area, soil_ph: soilPh, nitrogen, phosphorus, potassium,
+        temperature: weather.temp, rain_probability: weather.rainProb,
+      },
+    }));
   }, [crop, area, soilPh, nitrogen, phosphorus, potassium, weather]);
 
-  // ── Fetch Secondary Data when crop changes ──
+  // ── Charts data per crop ──
   const fetchSecondaryData = useCallback(async (selectedCrop: string) => {
     setIsLoadingSecondary(true);
     try {
-      const [histRes, mktRes, calRes, cmpRes] = await Promise.all([
-        fetch(`${API_BASE}/api/history/${selectedCrop}`),
-        fetch(`${API_BASE}/api/market/${selectedCrop}`),
-        fetch(`${API_BASE}/api/calendar/${selectedCrop}`),
-        fetch(`${API_BASE}/api/compare`),
+      const [h, m, c, cmp] = await Promise.all([
+        fetch(`${API_BASE}/api/history/${encodeURIComponent(selectedCrop)}`).then(r => r.json()),
+        fetch(`${API_BASE}/api/market/${encodeURIComponent(selectedCrop)}`).then(r => r.json()),
+        fetch(`${API_BASE}/api/calendar/${encodeURIComponent(selectedCrop)}`).then(r => r.json()),
+        fetch(`${API_BASE}/api/compare`).then(r => r.json()),
       ]);
-      const [histData, mktData, calData, cmpData] = await Promise.all([
-        histRes.json(), mktRes.json(), calRes.json(), cmpRes.json(),
-      ]);
-      setHistory(histData.history);
-      setMarket(mktData.prices);
-      setCalendar(calData.phases);
-      setComparison(cmpData.crops);
-    } catch {
-      // silently fail — show empty state
-    } finally {
-      setIsLoadingSecondary(false);
-    }
+      setHistory(h.history || []);
+      setMarket(m.prices || []);
+      setCalendar(c.phases || []);
+      setComparison(cmp.crops || []);
+      setSelectedPhase(0);
+    } catch { /* keep previous data */ }
+    finally { setIsLoadingSecondary(false); }
   }, []);
+  useEffect(() => { fetchSecondaryData(crop); }, [crop, fetchSecondaryData]);
 
-  useEffect(() => {
-    fetchSecondaryData(crop);
-  }, [crop, fetchSecondaryData]);
-
-  // ── Run AI Analysis ──
-  const handleRunAnalysis = async () => {
+  // ── AI analysis ──
+  const runAnalysis = useCallback(async () => {
+    const id = ++requestId.current;
     setIsAnalyzing(true);
+    setAnalysisError('');
     try {
       const res = await fetch(`${API_BASE}/api/predict/yield`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           crop, area, soil_ph: soilPh, nitrogen, phosphorus, potassium,
-          temperature: weather.temp, rain_probability: weather.rainProb,
-          rainfall_mm: weather.rainfall,
+          temperature: weather.temp, rain_probability: weather.rainProb, rainfall_mm: weather.rainfall,
         }),
       });
-      setResults(await res.json());
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      if (id === requestId.current) setResults(data);
     } catch {
-      alert('Failed to connect to the AI Backend. Ensure the FastAPI server is running on port 8000.');
+      if (id === requestId.current) setAnalysisError('Could not reach the AI server. Is the backend running on port 8000?');
     } finally {
-      setIsAnalyzing(false);
+      if (id === requestId.current) setIsAnalyzing(false);
     }
-  };
+  }, [crop, area, soilPh, nitrogen, phosphorus, potassium, weather]);
 
-  // ── Nutrient Radar Data ──
-  const radarData = results
-    ? Object.entries(results.nutrients).map(([key, val]) => ({ subject: key, value: val, fullMark: 100 }))
-    : [];
+  // Re-run automatically (debounced) whenever an input changes.
+  useEffect(() => {
+    if (!autoUpdate || isWeatherLoading || !(area > 0)) return;
+    const t = window.setTimeout(runAnalysis, 500);
+    return () => window.clearTimeout(t);
+  }, [autoUpdate, isWeatherLoading, runAnalysis, area]);
+
+  const taskKey = results?.tasks.map(t => t.title).join('|');
+  useEffect(() => { setDoneTasks(new Set()); }, [taskKey]);
+
+  // ── Derived values ──
+  const advice = weatherAdvice(weather);
+  const ph = phStatus(soilPh, cropInfo?.ph_range);
+  const latestPrice = market.at(-1);
+  const income = results && latestPrice ? results.total_yield * latestPrice.price : null;
+  const avgYield = comparison.find(c => sameCrop(c.crop, crop))?.yield;
+  const radarData = results ? Object.entries(results.nutrients).map(([k, v]) => ({ subject: k, value: v, fullMark: 100 })) : [];
+  const tasksDone = results ? results.tasks.filter(t => doneTasks.has(t.title)).length : 0;
+  const nutrientValues = { n: nitrogen, p: phosphorus, k: potassium };
+  const nutrientSetters = { n: setNitrogen, p: setPhosphorus, k: setPotassium };
+
+  const kpis: { key: KpiKey; label: string; value: string; sub: string; tone: Tone; icon: React.ReactNode; detail: React.ReactNode }[] = results ? [
+    {
+      key: 'yield', label: 'Expected harvest', icon: <Sprout size={18} />, tone: 'good',
+      value: `${tPerHaToQtlPerAcre(results.expected_yield).toFixed(1)} qtl/acre`,
+      sub: `${results.expected_yield} tonnes per hectare`,
+      detail: <>
+        Each acre of your {crop} field should give about <b>{tPerHaToQtlPerAcre(results.expected_yield).toFixed(1)} quintal</b>.
+        {avgYield != null && <> The usual average is {tPerHaToQtlPerAcre(avgYield).toFixed(1)} qtl/acre, so you are{' '}
+          <b className={results.expected_yield >= avgYield ? 'text-emerald-400' : 'text-amber-400'}>
+            {results.expected_yield >= avgYield ? 'above average 👍' : 'below average — follow the to-do list to improve'}
+          </b>.</>}
+      </>,
+    },
+    {
+      key: 'total', label: 'Total crop', icon: <Layers size={18} />, tone: 'info',
+      value: `${(results.total_yield * 10).toFixed(0)} quintal`,
+      sub: income ? `worth about ${lakhs(income)}` : `from ${area} ha`,
+      detail: <>
+        From {area} hectare ({toAcres(area).toFixed(1)} acre) you can expect <b>{results.total_yield} tonnes</b> ({(results.total_yield * 10).toFixed(0)} quintal).
+        {income && latestPrice && <> At today's market price of {rupees(latestPrice.price / 10)}/quintal that is about <b>{lakhs(income)}</b>.</>}
+      </>,
+    },
+    {
+      key: 'health', label: 'Crop health', icon: <Leaf size={18} />, tone: healthTone(results.crop_health),
+      value: `${HEALTH_EMOJI[results.crop_health] ?? ''} ${results.crop_health}`,
+      sub: `Weather risk: ${results.weather_risk}`,
+      detail: <>
+        Based on your soil, fertilizer and today's weather, your crop looks <b>{results.crop_health.toLowerCase()}</b>.
+        Weather risk is <b>{results.weather_risk.toLowerCase()}</b>. {advice.icon} {advice.text}
+      </>,
+    },
+    {
+      key: 'pest', label: 'Pest risk', icon: <ShieldAlert size={18} />, tone: riskTone(results.pest_risk),
+      value: results.pest_risk, sub: `Soil score ${results.soil_score}/100`,
+      detail: results.pest_risk === 'Low'
+        ? <>Pest risk is low. Walk your field <b>once a week</b> and look under leaves for insects or spots.</>
+        : results.pest_risk === 'Medium'
+          ? <>Some risk. Check your field <b>twice a week</b>. Look for holes, yellow patches or insects. Keep weeds down.</>
+          : <>High risk! <b>Check daily</b>. If you see damage, contact your nearest Krishi Vigyan Kendra before spraying.</>,
+    },
+  ] : [];
+  const openKpiData = kpis.find(k => k.key === openKpi);
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #050a0e 0%, #061020 50%, #050a0e 100%)' }}>
-      {/* ── Ambient Background ── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
-        <div className="absolute top-[-10%] left-[20%] w-[600px] h-[600px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.04) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.04) 0%, transparent 70%)' }} />
-      </div>
+    <div className="min-h-screen text-neutral-100">
+      <div className="px-4 md:px-6 py-6 max-w-[1500px] mx-auto">
 
-      <div className="relative z-10 px-6 py-6 max-w-[1600px] mx-auto">
-
-        {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(16,185,129,0.1))', border: '1px solid rgba(52,211,153,0.2)' }}>
-              <Sprout className="text-emerald-400 animate-float" size={28} />
-            </div>
+        {/* ══ WELCOME BANNER ═══════════════════════════════════════════════════ */}
+        <section className="farm-banner p-6 md:p-8 mb-6 shadow-lg">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <h1 className="text-3xl font-bold gradient-text-emerald" style={{ fontFamily: 'Space Grotesk' }}>
-                Agri-Yield Pro
-              </h1>
-              <p className="text-neutral-500 text-sm mt-0.5">AI-Powered Crop Intelligence Platform</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* AI Status */}
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <span className="text-neutral-300 font-medium text-xs">AI Engine Online</span>
-            </div>
-            {/* Weather widget */}
-            {!isWeatherLoading && (
-              <div className="flex items-center gap-3 px-4 py-2 rounded-full glass-card text-xs">
-                <Sun size={14} className="text-yellow-400" />
-                <span className="text-neutral-200 font-semibold">{weather.temp}°C</span>
-                <span className="text-neutral-600">|</span>
-                <CloudRain size={14} className="text-blue-400" />
-                <span className="text-neutral-200 font-semibold">{weather.rainProb}%</span>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="px-3 py-1 rounded-full bg-cream/20 text-cream text-xs font-bold tracking-wide">
+                  {season.emoji} {season.name} season · {season.months}
+                </span>
+                <button
+                  onClick={checkApi}
+                  title="Click to check the AI server again"
+                  className="px-3 py-1 rounded-full bg-cream/20 hover:bg-cream/30 text-cream text-xs font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  {apiStatus === 'online' ? <Wifi size={12} /> : apiStatus === 'offline' ? <WifiOff size={12} /> : <Loader2 size={12} className="animate-spin" />}
+                  AI {apiStatus === 'online' ? 'ready' : apiStatus === 'offline' ? 'offline — tap to retry' : 'checking…'}
+                </button>
               </div>
-            )}
-            {/* Location */}
-            <div className="flex items-center gap-1.5 px-4 py-2 rounded-full glass-card text-xs text-neutral-500">
-              <MapPin size={12} />
-              <span className="max-w-[200px] truncate">{locationName}</span>
+              <h1 className="text-3xl md:text-4xl font-extrabold text-cream leading-tight" style={{ fontFamily: 'Baloo 2' }}>
+                Namaste{farmerName ? `, ${farmerName}` : ''} 🙏
+              </h1>
+              <p className="text-cream/90 text-base mt-1">
+                Here is how your <b>{iconFor(crop)} {crop}</b> field is doing today.
+              </p>
             </div>
-          </div>
-        </header>
 
-        {/* ══ MAIN GRID ════════════════════════════════════════════════════════ */}
+            <button
+              onClick={() => weatherRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+              className="text-left bg-cream/95 hover:bg-cream rounded-2xl p-4 shadow-md min-w-[260px] transition-transform hover:-translate-y-0.5"
+            >
+              <div className="flex items-center gap-4">
+                <div>
+                  <div className="text-3xl font-extrabold text-neutral-100">{isWeatherLoading ? '—' : `${Math.round(weather.temp)}°C`}</div>
+                  <div className="text-xs text-neutral-500 flex items-center gap-1"><CloudRain size={12} /> {weather.rainProb}% rain chance</div>
+                </div>
+                <div className="flex-1 text-sm font-semibold text-neutral-200 leading-snug">{advice.icon} {advice.text}</div>
+              </div>
+              <div className="text-[11px] text-neutral-500 mt-2 flex items-center gap-1 truncate"><MapPin size={11} /> {locationName}</div>
+            </button>
+          </div>
+        </section>
+
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
 
-          {/* ── LEFT SIDEBAR: Controls ─────────────────────────────────────── */}
-          <aside className="xl:col-span-3 space-y-4">
-
-            {/* Farm Parameters */}
+          {/* ══ LEFT: YOUR FARM ════════════════════════════════════════════════ */}
+          <aside className="xl:col-span-4 space-y-5">
             <div className="glass-card p-5">
-              <SectionHeader icon={<Leaf size={18} />} title="Farm Parameters" sub="Configure your field inputs" />
-              <div className="space-y-4 text-sm">
-                <div>
-                  <label className="text-neutral-500 text-xs font-medium uppercase tracking-wider block mb-1.5">Crop Type</label>
-                  <select
-                    value={crop}
-                    onChange={e => setCrop(e.target.value)}
-                    className="farm-input"
-                    id="crop-select"
-                  >
-                    {availableCrops.map(c => <option key={c}>{c}</option>)}
+              <CardTitle icon={<Leaf size={18} />} title="Tell us about your farm" sub="Change anything — results update by themselves" />
+
+              {/* Crop chips */}
+              <div className="mb-5">
+                <div className="text-sm font-semibold text-neutral-300 mb-2">Which crop?</div>
+                <div className="flex flex-wrap gap-2">
+                  {chipCrops.map(c => (
+                    <button key={c} className={`chip ${crop === c ? 'active' : ''}`} onClick={() => setCrop(c)} aria-pressed={crop === c}>
+                      <span>{iconFor(c)}</span>{c}
+                    </button>
+                  ))}
+                  <button className="chip" onClick={() => setShowAllCrops(s => !s)} aria-expanded={showAllCrops}>
+                    {showAllCrops ? 'Fewer' : `All ${cropNames.length}`} <ChevronDown size={14} className={showAllCrops ? 'rotate-180' : ''} />
+                  </button>
+                </div>
+                {showAllCrops && (
+                  <select id="crop-select" value={crop} onChange={e => setCrop(e.target.value)} className="farm-input mt-3">
+                    {cropNames.map(c => <option key={c} value={c}>{iconFor(c)} {c}</option>)}
                   </select>
-                </div>
+                )}
+              </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-neutral-500 text-xs font-medium uppercase tracking-wider block mb-1.5">Area (Ha)</label>
-                    <input id="area-input" type="number" min={0.1} step={0.1} value={area}
-                      onChange={e => setArea(parseFloat(e.target.value))} className="farm-input" />
-                  </div>
-                  <div>
-                    <label className="text-neutral-500 text-xs font-medium uppercase tracking-wider block mb-1.5">Soil pH</label>
-                    <input id="ph-input" type="number" min={4} max={9} step={0.1} value={soilPh}
-                      onChange={e => setSoilPh(parseFloat(e.target.value))} className="farm-input" />
-                  </div>
-                </div>
+              <div className="space-y-5">
+                <SliderField
+                  id="area-input" label="Land size" value={area} min={0.5} max={20} step={0.5} suffix="ha" onChange={setArea}
+                  hint={<>≈ <b>{toAcres(area || 0).toFixed(1)} acre</b></>}
+                />
+                <SliderField
+                  id="ph-input" label="Soil pH" value={soilPh} min={4} max={9} step={0.1} onChange={setSoilPh}
+                  tag={<Tag tone={ph.tone}>{ph.label}</Tag>} hint={ph.tip}
+                />
 
-                {/* NPK */}
-                <div>
-                  <label className="text-neutral-500 text-xs font-medium uppercase tracking-wider block mb-2">NPK (kg/ha)</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: 'n-input', label: 'N', val: nitrogen, set: setNitrogen, color: '#34d399' },
-                      { id: 'p-input', label: 'P', val: phosphorus, set: setPhosphorus, color: '#60a5fa' },
-                      { id: 'k-input', label: 'K', val: potassium, set: setPotassium, color: '#f97316' },
-                    ].map(({ id, label, val, set, color }) => (
-                      <div key={label} className="relative">
-                        <label className="block text-center text-xs font-bold mb-1" style={{ color }}>{label}</label>
-                        <input id={id} type="number" min={0} value={val}
-                          onChange={e => set(parseFloat(e.target.value))} className="farm-input text-center px-2" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <div className="rangoli-divider" />
+                <div className="text-sm font-semibold text-neutral-300 -mb-2">Fertilizer already given (kg per hectare)</div>
+                {NUTRIENTS.map(n => {
+                  const v = nutrientValues[n.key];
+                  const st = nutrientStatus(v, n.low, n.high);
+                  return (
+                    <SliderField
+                      key={n.key} id={`${n.short.toLowerCase()}-input`} value={v} min={0} max={n.max} step={5}
+                      onChange={nutrientSetters[n.key]}
+                      label={<span><span className="font-extrabold" style={{ color: n.color }}>{n.short}</span> {n.label}</span>}
+                      tag={<Tag tone={st.tone}>{st.label}</Tag>}
+                      hint={<>{n.product} — for {n.use}</>}
+                    />
+                  );
+                })}
+              </div>
 
-                {/* Analyze Button */}
+              {/* Actions */}
+              <div className="mt-6 space-y-2.5">
                 <button
                   id="run-analysis-btn"
-                  onClick={handleRunAnalysis}
+                  onClick={runAnalysis}
                   disabled={isAnalyzing}
-                  className="w-full mt-2 flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-60"
-                  style={{
-                    background: isAnalyzing
-                      ? 'rgba(52,211,153,0.2)'
-                      : 'linear-gradient(135deg, #059669, #0d9488)',
-                    boxShadow: isAnalyzing ? 'none' : '0 8px 24px rgba(5,150,105,0.25)',
-                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-base text-cream bg-emerald-500 hover:bg-emerald-600 transition-all active:scale-[0.98] disabled:opacity-70 shadow-md"
                 >
-                  {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                  {isAnalyzing ? 'Analyzing Fields...' : 'Run AI Analysis'}
+                  {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+                  {isAnalyzing ? 'Checking your field…' : 'Check my harvest'}
                 </button>
-                {results && (
+                <div className="grid grid-cols-2 gap-2.5">
                   <button
                     onClick={() => setShowSaveModal(true)}
-                    className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-xs text-neutral-300 bg-white/5 hover:bg-white/10 hover:text-emerald-400 transition-all border border-white/5"
+                    disabled={!results}
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm text-neutral-200 bg-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 border border-neutral-800 transition-all disabled:opacity-50"
                   >
-                    <Save size={14} />
-                    Save This Prediction
+                    <Save size={15} /> Save
                   </button>
-                )}
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm text-neutral-200 bg-white/5 hover:bg-amber-500/15 hover:text-amber-400 border border-neutral-800 transition-all"
+                  >
+                    <RotateCcw size={15} /> Reset
+                  </button>
+                </div>
+                <label className="flex items-center gap-2 text-sm text-neutral-400 cursor-pointer select-none pt-1">
+                  <input type="checkbox" checked={autoUpdate} onChange={e => setAutoUpdate(e.target.checked)} className="w-4 h-4 accent-[#2F7D32]" />
+                  Update results automatically
+                </label>
+                {analysisError && <p className="text-sm text-red-400 flex items-start gap-1.5"><AlertTriangle size={15} className="mt-0.5 shrink-0" />{analysisError}</p>}
               </div>
             </div>
 
-            {/* Live Weather Panel */}
-            <div className="glass-card p-5 relative overflow-hidden">
-              <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full blur-3xl" style={{ background: 'rgba(251,191,36,0.08)' }} />
-              <SectionHeader icon={<Thermometer size={18} />} title="Live Weather" sub={locationName} color="text-orange-400" />
-              {isWeatherLoading ? (
-                <div className="flex justify-center p-6"><Loader2 className="animate-spin text-neutral-600" size={24} /></div>
+            {/* Weather */}
+            <div ref={weatherRef} className="glass-card p-5">
+              <CardTitle
+                icon={<Thermometer size={18} />} title="Today's weather" sub={locationName} tone="text-orange-400 bg-orange-500/10"
+                right={
+                  <button onClick={loadWeather} disabled={isWeatherLoading} title="Refresh weather"
+                    className="p-2 rounded-lg text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                    <RefreshCw size={16} className={isWeatherLoading ? 'animate-spin' : ''} />
+                  </button>
+                }
+              />
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Temperature', value: `${weather.temp}°C`, icon: <Thermometer size={16} />, color: '#E07A1F', note: weather.temp >= 36 ? 'Very hot' : weather.temp <= 12 ? 'Cold' : 'Normal' },
+                  { label: 'Rain chance', value: `${weather.rainProb}%`, icon: <CloudRain size={16} />, color: '#3A86C8', note: weather.rainProb >= 60 ? 'Likely' : weather.rainProb >= 30 ? 'Maybe' : 'Unlikely' },
+                  { label: 'Wind', value: `${weather.windSpeed} km/h`, icon: <Wind size={16} />, color: '#7E57C2', note: weather.windSpeed >= 25 ? 'No spraying' : 'Calm' },
+                  { label: 'Humidity', value: `${weather.humidity}%`, icon: <Droplets size={16} />, color: '#2F7D32', note: weather.humidity >= 85 ? 'Fungus risk' : 'OK' },
+                ].map(w => (
+                  <div key={w.label} className="rounded-xl p-3 border border-neutral-800 bg-neutral-950/60">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: w.color }}>{w.icon}{w.label}</div>
+                    <div className="text-xl font-extrabold text-neutral-100 mt-1">{isWeatherLoading ? '…' : w.value}</div>
+                    <div className="text-xs text-neutral-500">{w.note}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Saved */}
+            <div className="glass-card p-5">
+              <CardTitle icon={<Save size={18} />} title="My saved fields" sub="Tap a field to load it" tone="text-blue-400 bg-blue-500/10" />
+              {savedPlans.length === 0 ? (
+                <p className="text-sm text-neutral-500">Nothing saved yet. Press <b>Save</b> after checking your harvest.</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: 'w-temp', label: 'Temp', value: `${weather.temp}°C`, icon: <Thermometer size={16} />, color: '#f97316' },
-                    { id: 'w-rain', label: 'Rain Prob.', value: `${weather.rainProb}%`, icon: <CloudRain size={16} />, color: '#60a5fa' },
-                    { id: 'w-wind', label: 'Wind', value: `${weather.windSpeed} km/h`, icon: <Wind size={16} />, color: '#a78bfa' },
-                    { id: 'w-humid', label: 'Humidity', value: `${weather.humidity}%`, icon: <Droplets size={16} />, color: '#34d399' },
-                  ].map(({ id, label, value, icon, color }) => (
-                    <div key={id} id={id} className="bg-white/3 rounded-xl p-3 border border-white/5 text-center">
-                      <div className="flex justify-center mb-1" style={{ color }}>{icon}</div>
-                      <div className="text-xs text-neutral-500 mb-0.5">{label}</div>
-                      <div className="text-sm font-bold text-neutral-100">{value}</div>
+                <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1">
+                  {savedPlans.map(plan => (
+                    <div key={plan.id} className="rounded-xl border border-neutral-800 hover:border-emerald-400 bg-neutral-950/60 transition-colors flex items-center">
+                      <button onClick={() => handleLoadPlan(plan)} className="flex-1 text-left p-3 min-w-0">
+                        <div className="font-bold text-sm text-neutral-100 truncate">{iconFor(plan.crop)} {plan.name}</div>
+                        <div className="text-xs text-neutral-500">{plan.crop} · {plan.area} ha · {tPerHaToQtlPerAcre(plan.expected_yield).toFixed(1)} qtl/acre · {plan.crop_health}</div>
+                      </button>
+                      <button onClick={() => handleLoadPlan(plan)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg" title="Load"><Download size={15} /></button>
+                      <button onClick={() => handleDeletePlan(plan)} className="p-2 mr-1 text-red-400 hover:bg-red-500/10 rounded-lg" title="Delete"><Trash2 size={15} /></button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
-            {/* Soil Health */}
-            {results && (
-              <div className="glass-card p-5 animate-slide-up">
-                <SectionHeader icon={<FlaskConical size={18} />} title="Soil Health Score" color="text-amber-400" />
-                <div className="flex items-center justify-center mb-4">
-                  <div className="relative w-28 h-28">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
-                      <circle
-                        cx="50" cy="50" r="40" fill="none"
-                        stroke={results.soil_score > 70 ? '#34d399' : results.soil_score > 45 ? '#fbbf24' : '#f87171'}
-                        strokeWidth="10" strokeLinecap="round"
-                        strokeDasharray={`${(results.soil_score / 100) * 251.2} 251.2`}
-                        style={{ transition: 'stroke-dasharray 1s ease', filter: 'drop-shadow(0 0 6px currentColor)' }}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold text-neutral-100">{results.soil_score}</span>
-                      <span className="text-xs text-neutral-500">/ 100</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2.5">
-                  <FactorBar label="pH Optimal" value={results.ph_factor} color="#34d399" />
-                  <FactorBar label="Temperature" value={results.temp_factor} color="#f97316" />
-                  <FactorBar label="Nitrogen Level" value={results.nitrogen_factor} color="#60a5fa" />
-                </div>
-              </div>
-            )}
-
-            {/* Saved Plans */}
-            {savedPlans.length > 0 && (
-              <div className="glass-card p-5">
-                <SectionHeader icon={<Save size={18} />} title="Saved Predictions" color="text-blue-400" />
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                  {savedPlans.map(plan => (
-                    <div key={plan.id} className="bg-white/5 border border-white/5 rounded-xl p-3 flex flex-col gap-2 relative group transition-all hover:border-blue-500/30">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-semibold text-sm text-neutral-100">{plan.name}</div>
-                          <div className="text-xs text-neutral-500">{plan.crop} · {plan.area} ha</div>
-                        </div>
-                        <div className="flex gap-1">
-                          <button onClick={() => handleLoadPlan(plan)} className="p-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors" title="Load parameters">
-                            <Download size={14} />
-                          </button>
-                          <button onClick={() => handleDeletePlan(plan.id)} className="p-1.5 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors" title="Delete">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex justify-between text-xs mt-1 border-t border-white/5 pt-2">
-                        <span className="text-emerald-400 font-medium">Yield: {plan.expected_yield} t/ha</span>
-                        <span className={HEALTH_COLOR[plan.crop_health] || 'text-yellow-400'}>{plan.crop_health}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </aside>
 
-          {/* ── MAIN CONTENT ────────────────────────────────────────────────── */}
-          <main className="xl:col-span-9 space-y-5">
+          {/* ══ RIGHT: RESULTS ═════════════════════════════════════════════════ */}
+          <main className="xl:col-span-8 space-y-5">
 
-            {/* ── TOP KPI ROW ── */}
-            {results ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up">
-                <StatCard
-                  label="Expected Yield"
-                  value={`${results.expected_yield}`}
-                  sub={`${results.unit} — ${area} ha field`}
-                  icon={<Activity size={18} />}
-                  color="text-emerald-400"
-                  glow="#34d399"
-                  trend="up"
-                />
-                <StatCard
-                  label="Total Production"
-                  value={`${results.total_yield} t`}
-                  sub={`across ${area} hectares`}
-                  icon={<Layers size={18} />}
-                  color="text-blue-400"
-                  glow="#3b82f6"
-                />
-                <StatCard
-                  label="Crop Health"
-                  value={results.crop_health}
-                  sub={`Weather risk: ${results.weather_risk}`}
-                  icon={<Leaf size={18} />}
-                  color={HEALTH_COLOR[results.crop_health] || 'text-yellow-400'}
-                />
-                <StatCard
-                  label="Pest Risk"
-                  value={results.pest_risk}
-                  sub={`Soil score: ${results.soil_score}/100`}
-                  icon={<ShieldAlert size={18} />}
-                  color={RISK_COLOR[results.pest_risk] || 'text-yellow-400'}
-                />
-              </div>
-            ) : (
+            {/* KPI cards (tap to explain) */}
+            <div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[0,1,2,3].map(i => (
-                  <div key={i} className="glass-card p-5 h-28 shimmer" style={{ animationDelay: `${i * 0.1}s` }} />
-                ))}
+                {results ? kpis.map(k => (
+                  <button
+                    key={k.key}
+                    onClick={() => setOpenKpi(o => (o === k.key ? null : k.key))}
+                    aria-expanded={openKpi === k.key}
+                    className={`glass-card clickable-card p-4 text-left relative transition-all ${openKpi === k.key ? `ring-2 ring-offset-2 ring-offset-cream ${TONE[k.tone].border.replace('border-', 'ring-')}` : ''} ${isAnalyzing ? 'opacity-70' : ''}`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-neutral-400">{k.label}</span>
+                      <span className={`p-1.5 rounded-lg ${TONE[k.tone].bg} ${TONE[k.tone].text}`}>{k.icon}</span>
+                    </div>
+                    <div className={`text-2xl font-extrabold ${TONE[k.tone].text}`} style={{ fontFamily: 'Baloo 2' }}>{k.value}</div>
+                    <div className="text-xs text-neutral-500 mt-0.5">{k.sub}</div>
+                    <div className="text-[11px] font-semibold text-neutral-500 mt-2 flex items-center gap-1">
+                      <Info size={11} /> {openKpi === k.key ? 'Hide' : 'What does this mean?'}
+                    </div>
+                  </button>
+                )) : [0, 1, 2, 3].map(i => <div key={i} className="glass-card p-5 h-32 shimmer" />)}
               </div>
-            )}
-
-            {/* ── MoSPI INDIA AGRICULTURE SUMMARY ── */}
-            {mospiSummary && (
-              <div className="glass-card p-6 border border-blue-500/20 bg-blue-950/10 animate-slide-up relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl" />
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <h2 className="text-lg font-bold text-white">India Agriculture — Official Statistics</h2>
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-[10px] font-bold tracking-wide uppercase">
-                        <ShieldCheck size={12} /> MoSPI
-                      </div>
-                    </div>
-                    <p className="text-xs text-neutral-400">Historical Data: 2011-12 → 2023-24 (All Crops Value of Output)</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <div className="text-[10px] text-neutral-500 font-medium uppercase tracking-wider mb-1">Latest ({mospiSummary.latest_year})</div>
-                      <div className="text-2xl font-bold text-blue-400">
-                        {mospiSummary.total_value.toLocaleString()} <span className="text-sm font-normal text-neutral-400">{mospiSummary.unit}</span>
-                      </div>
-                    </div>
-                    <div className="h-10 w-px bg-white/10" />
-                    <div className="text-right">
-                      <div className="text-[10px] text-neutral-500 font-medium uppercase tracking-wider mb-1">12-Yr CAGR</div>
-                      <div className="text-xl font-bold text-emerald-400 flex items-center gap-1 justify-end">
-                        +{mospiSummary.cagr}% <ArrowUpRight size={16} />
-                      </div>
-                    </div>
-                    <button onClick={() => document.getElementById('nav-mospi')?.click()} className="ml-2 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-                      Explore Statistics
-                    </button>
-                  </div>
+              {openKpiData && (
+                <div className={`mt-3 rounded-2xl border p-4 text-[15px] leading-relaxed text-neutral-200 animate-slide-up ${TONE[openKpiData.tone].bg} ${TONE[openKpiData.tone].border}`}>
+                  {openKpiData.detail}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* ── MIDDLE ROW: Yield Chart + Plan/Soil ── */}
+            {/* To-do + soil */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-
-              {/* Yield History Chart */}
-              <div className="lg:col-span-7 glass-card p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <SectionHeader icon={<BarChart3 size={18} />} title="12-Month Yield Trend" sub={`${crop} performance analysis`} />
-                  {isLoadingSecondary && <Loader2 size={14} className="animate-spin text-neutral-600" />}
-                </div>
-                <ResponsiveContainer width="100%" height={220}>
-                  <AreaChart data={history} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="predictedGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }} />
-                    <Area type="monotone" dataKey="actual" name="Actual" stroke="#34d399" strokeWidth={2} fill="url(#actualGrad)" dot={false} />
-                    <Area type="monotone" dataKey="predicted" name="Predicted" stroke="#60a5fa" strokeWidth={2} fill="url(#predictedGrad)" dot={false} strokeDasharray="4 4" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="lg:col-span-7 glass-card p-5 flex flex-col">
+                <CardTitle
+                  icon={activeTab === 'plan' ? <CheckCircle size={18} /> : <FlaskConical size={18} />}
+                  title={activeTab === 'plan' ? 'What to do next' : 'Soil nutrient balance'}
+                  sub={activeTab === 'plan'
+                    ? (results ? `${tasksDone} of ${results.tasks.length} done — tap when finished` : 'Your to-do list appears here')
+                    : 'Closer to the edge = better'}
+                  right={
+                    <div className="flex gap-1 bg-neutral-900 rounded-lg p-0.5 shrink-0">
+                      <button id="tab-plan" className={`tab-btn ${activeTab === 'plan' ? 'active' : ''}`} onClick={() => setActiveTab('plan')}>To-do</button>
+                      <button id="tab-soil" className={`tab-btn ${activeTab === 'soil' ? 'active' : ''}`} onClick={() => setActiveTab('soil')}>Soil</button>
+                    </div>
+                  }
+                />
+                {activeTab === 'plan' ? (
+                  <div className="space-y-2.5 overflow-y-auto pr-1" style={{ maxHeight: 300 }}>
+                    {results && results.tasks.length > 0 && (
+                      <div className="progress-bar-track h-2 mb-3">
+                        <div className="progress-bar-fill bg-emerald-500" style={{ width: `${(tasksDone / results.tasks.length) * 100}%` }} />
+                      </div>
+                    )}
+                    {results ? results.tasks.map(task => {
+                      const tone: Tone = task.type === 'warning' ? 'warn' : task.type === 'success' ? 'good' : 'info';
+                      const done = doneTasks.has(task.title);
+                      return (
+                        <button
+                          key={task.title}
+                          onClick={() => setDoneTasks(s => { const n = new Set(s); if (n.has(task.title)) n.delete(task.title); else n.add(task.title); return n; })}
+                          className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border transition-all ${TONE[tone].bg} ${TONE[tone].border} ${done ? 'opacity-55' : 'hover:-translate-y-0.5'}`}
+                        >
+                          <span className={`mt-0.5 shrink-0 ${done ? 'text-emerald-400' : TONE[tone].text}`}>
+                            {done ? <CheckCircle size={20} /> : <Circle size={20} />}
+                          </span>
+                          <span>
+                            <span className={`block font-bold text-[15px] ${TONE[tone].text} ${done ? 'line-through' : ''}`}>{task.title}</span>
+                            <span className="block text-sm text-neutral-300 mt-0.5 leading-relaxed">{task.description}</span>
+                          </span>
+                        </button>
+                      );
+                    }) : (
+                      <p className="text-sm text-neutral-500 py-8 text-center">Checking your field…</p>
+                    )}
+                    {results && results.tasks.length === 0 && <p className="text-sm text-emerald-400">✅ Everything looks fine. No action needed today.</p>}
+                  </div>
+                ) : results && radarData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="rgba(139,90,43,0.2)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#5C4633', fontSize: 12, fontWeight: 600 }} />
+                      <Radar name="Score" dataKey="value" stroke="#2F7D32" fill="#2F7D32" fillOpacity={0.25} strokeWidth={2} />
+                      <Tooltip content={<ChartTooltip />} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-sm text-neutral-500 py-8 text-center">Run a check to see your soil balance.</p>}
               </div>
 
-              {/* Farming Plan / Nutrient Tabs */}
-              <div className="lg:col-span-5 glass-card p-5 flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-neutral-100">
-                    {activeTab === 'plan' ? '🌿 Farming Plan' : '🧪 Nutrient Balance'}
-                  </h3>
-                  <div className="flex gap-1 bg-white/5 rounded-lg p-0.5">
-                    <button id="tab-plan" className={`tab-btn ${activeTab === 'plan' ? 'active' : ''}`} onClick={() => setActiveTab('plan')}>Plan</button>
-                    <button id="tab-soil" className={`tab-btn ${activeTab === 'soil' ? 'active' : ''}`} onClick={() => setActiveTab('soil')}>Soil</button>
-                  </div>
-                </div>
-
-                {activeTab === 'plan' && (
-                  <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{ maxHeight: '250px' }}>
-                    {results ? results.tasks.map((task, idx) => (
-                      <div
-                        key={idx}
-                        className={`task-item flex items-start gap-3 p-3 rounded-xl border animate-slide-up ${
-                          task.type === 'warning' ? 'bg-yellow-500/8 border-yellow-500/15' :
-                          task.type === 'success' ? 'bg-emerald-500/8 border-emerald-500/15' :
-                          'bg-blue-500/8 border-blue-500/15'
-                        }`}
-                        style={{ animationDelay: `${idx * 0.06}s`, animationFillMode: 'both' }}
-                      >
-                        <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
-                          task.type === 'warning' ? 'bg-yellow-500/20 text-yellow-400' :
-                          task.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' :
-                          'bg-blue-500/20 text-blue-400'
-                        }`}>
-                          {task.type === 'warning' ? <AlertTriangle size={16} /> :
-                           task.type === 'success' ? <CheckCircle size={16} /> :
-                           <Info size={16} />}
-                        </div>
-                        <div>
-                          <div className={`font-semibold text-sm ${
-                            task.type === 'warning' ? 'text-yellow-400' :
-                            task.type === 'success' ? 'text-emerald-400' : 'text-blue-400'
-                          }`}>{task.title}</div>
-                          <div className="text-xs text-neutral-400 mt-0.5 leading-relaxed">{task.description}</div>
+              {/* Soil score */}
+              <div className="lg:col-span-5 glass-card p-5">
+                <CardTitle icon={<FlaskConical size={18} />} title="Soil health" sub="Out of 100" tone="text-amber-400 bg-amber-500/15" />
+                {results ? (
+                  <>
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="relative w-32 h-32">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="40" fill="none" stroke="#EFE6D2" strokeWidth="10" />
+                          <circle
+                            cx="50" cy="50" r="40" fill="none" strokeWidth="10" strokeLinecap="round"
+                            stroke={results.soil_score > 70 ? '#2F7D32' : results.soil_score > 45 ? '#F2A71B' : '#C0392B'}
+                            strokeDasharray={`${(results.soil_score / 100) * 251.2} 251.2`}
+                            style={{ transition: 'stroke-dasharray 1s ease' }}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-4xl font-extrabold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>{results.soil_score}</span>
+                          <span className="text-xs font-semibold text-neutral-500">
+                            {results.soil_score > 70 ? 'Healthy' : results.soil_score > 45 ? 'Needs care' : 'Weak'}
+                          </span>
                         </div>
                       </div>
-                    )) : (
-                      <div className="flex flex-col items-center justify-center h-full py-10 text-neutral-600">
-                        <Activity size={36} className="mb-3 opacity-40" />
-                        <p className="text-sm">Run AI Analysis to get your farming plan</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === 'soil' && (
-                  <div className="flex-1">
-                    {results && radarData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={230}>
-                        <RadarChart data={radarData}>
-                          <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                          <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 10 }} />
-                          <Radar name="Soil" dataKey="value" stroke="#34d399" fill="#34d399" fillOpacity={0.15} strokeWidth={2} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full py-10 text-neutral-600">
-                        <FlaskConical size={36} className="mb-3 opacity-40" />
-                        <p className="text-sm">Run Analysis to see nutrient radar</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { label: 'pH balance', value: results.ph_factor, color: '#2F7D32' },
+                        { label: 'Temperature fit', value: results.temp_factor, color: '#E07A1F' },
+                        { label: 'Nitrogen level', value: results.nitrogen_factor, color: '#3A86C8' },
+                      ].map(f => (
+                        <div key={f.label}>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-neutral-400 font-medium">{f.label}</span>
+                            <span className="font-bold text-neutral-200">{f.value}%</span>
+                          </div>
+                          <div className="progress-bar-track h-2">
+                            <div className="progress-bar-fill" style={{ width: `${f.value}%`, background: f.color }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : <div className="h-48 shimmer rounded-xl" />}
               </div>
             </div>
 
-            {/* ── BOTTOM ROW: Market + Comparison + Calendar ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Yield trend */}
+            <div className="glass-card p-5">
+              <CardTitle
+                icon={<BarChart3 size={18} />} title="Harvest over the last 12 months" sub={`${crop} — tonnes per hectare`}
+                right={
+                  <div className="flex flex-wrap gap-1.5 justify-end">
+                    {isLoadingSecondary && <Loader2 size={16} className="animate-spin text-neutral-500 self-center" />}
+                    {([['actual', 'Actual'], ['predicted', 'AI forecast'], ['rainfall', 'Rainfall']] as const).map(([k, l]) => (
+                      <button key={k} className={`chip !py-1 !px-3 !text-xs ${series[k] ? 'active' : ''}`}
+                        onClick={() => setSeries(s => ({ ...s, [k]: !s[k] }))} aria-pressed={series[k]}>{l}</button>
+                    ))}
+                  </div>
+                }
+              />
+              <ResponsiveContainer width="100%" height={240}>
+                <ComposedChart data={history} margin={{ top: 5, right: series.rainfall ? 0 : 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2F7D32" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#2F7D32" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,90,43,0.12)" />
+                  <XAxis dataKey="month" tick={{ fill: '#857059', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="y" tick={{ fill: '#857059', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  {series.rainfall && <YAxis yAxisId="rain" orientation="right" tick={{ fill: '#3A86C8', fontSize: 11 }} axisLine={false} tickLine={false} unit="mm" />}
+                  <Tooltip content={<ChartTooltip />} />
+                  {series.rainfall && <Bar yAxisId="rain" dataKey="rainfall" name="Rainfall (mm)" fill="#3A86C8" opacity={0.35} radius={[4, 4, 0, 0]} />}
+                  {series.actual && <Area yAxisId="y" type="monotone" dataKey="actual" name="Actual" stroke="#2F7D32" strokeWidth={2.5} fill="url(#actualGrad)" dot={false} />}
+                  {series.predicted && <Area yAxisId="y" type="monotone" dataKey="predicted" name="AI forecast" stroke="#F07F1A" strokeWidth={2} fill="none" dot={false} strokeDasharray="5 4" />}
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
 
-              {/* Market Prices */}
+            {/* Market + compare + stages */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               <div className="lg:col-span-5 glass-card p-5">
-                <SectionHeader icon={<DollarSign size={18} />} title="Market Price Trend" sub={`${crop} — INR/tonne`} color="text-amber-400" />
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={market} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                    <XAxis dataKey="month" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <Line type="monotone" dataKey="price" name="Market Price" stroke="#fbbf24" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="msp" name="MSP" stroke="#f87171" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
+                <CardTitle icon={<IndianRupee size={18} />} title="Mandi price" sub={`${crop} — ₹ per quintal`} tone="text-amber-400 bg-amber-500/15" />
+                {latestPrice && (
+                  <div className={`rounded-xl border p-3 mb-3 text-sm ${latestPrice.price >= latestPrice.msp ? `${TONE.good.bg} ${TONE.good.border}` : `${TONE.warn.bg} ${TONE.warn.border}`}`}>
+                    <div className="font-bold text-neutral-100">
+                      Now {rupees(latestPrice.price / 10)}/qtl · MSP {rupees(latestPrice.msp / 10)}/qtl
+                    </div>
+                    <div className="text-neutral-300">
+                      {latestPrice.price >= latestPrice.msp
+                        ? `📈 Market is ${(((latestPrice.price - latestPrice.msp) / latestPrice.msp) * 100).toFixed(0)}% above MSP — a good time to sell.`
+                        : '📉 Market is below MSP — consider selling at a government procurement centre.'}
+                    </div>
+                  </div>
+                )}
+                <ResponsiveContainer width="100%" height={170}>
+                  <LineChart data={market.map(m => ({ ...m, price: m.price / 10, msp: m.msp / 10 }))} margin={{ top: 5, right: 10, left: -5, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,90,43,0.12)" />
+                    <XAxis dataKey="month" tick={{ fill: '#857059', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#857059', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Line type="monotone" dataKey="price" name="Market ₹/qtl" stroke="#E09B12" strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="msp" name="MSP ₹/qtl" stroke="#C0392B" strokeWidth={1.5} dot={false} strokeDasharray="5 4" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Crop Comparison */}
               <div className="lg:col-span-4 glass-card p-5">
-                <SectionHeader icon={<BarChart3 size={18} />} title="Crop Yield Comparison" sub="Average tonnes/ha" color="text-blue-400" />
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={comparison} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis dataKey="crop" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="yield" name="Yield" radius={[6, 6, 0, 0]}>
-                      {comparison.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} opacity={entry.crop === crop ? 1 : 0.4} />
+                <CardTitle icon={<BarChart3 size={18} />} title="Compare crops" sub="Tap a bar to switch crop" tone="text-blue-400 bg-blue-500/10" />
+                <ResponsiveContainer width="100%" height={230}>
+                  <BarChart data={comparison} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="crop" width={90} tick={{ fill: '#5C4633', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false}
+                      tickFormatter={(v: string) => v.replace(/\s*\(.*\)/, '')} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(139,90,43,0.06)' }} />
+                    {avgYield != null && <ReferenceLine x={avgYield} stroke="#2F7D32" strokeDasharray="3 3" />}
+                    <Bar dataKey="yield" name="t/ha" radius={[0, 6, 6, 0]} cursor="pointer" onClick={(d: any) => pickCrop(d?.payload?.crop ?? d?.crop)}>
+                      {comparison.map((e, i) => (
+                        <Cell key={e.crop} fill={FARM_PALETTE[i % FARM_PALETTE.length]} opacity={sameCrop(e.crop, crop) ? 1 : 0.45} />
                       ))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Crop Calendar */}
               <div className="lg:col-span-3 glass-card p-5">
-                <SectionHeader icon={<Calendar size={18} />} title="Crop Calendar" sub={crop} color="text-pink-400" />
-                <div className="space-y-2.5">
-                  {calendar.length > 0 ? calendar.map((phase, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: phase.color, boxShadow: `0 0 6px ${phase.color}` }} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium text-neutral-200 truncate">{phase.phase}</div>
-                        <div className="text-xs text-neutral-600">{phase.start} – {phase.end}</div>
-                      </div>
-                    </div>
-                  )) : (
-                    Array(5).fill(0).map((_, i) => (
-                      <div key={i} className="h-8 rounded-lg shimmer" style={{ animationDelay: `${i * 0.1}s` }} />
-                    ))
-                  )}
-                </div>
+                <CardTitle icon={<Calendar size={18} />} title="Crop stages" sub="Tap a stage for tips" tone="text-pink-400 bg-pink-500/10" />
+                <ol className="relative border-l-2 border-dashed border-neutral-700 ml-2 space-y-1">
+                  {calendar.length ? calendar.map((p, i) => (
+                    <li key={p.phase} className="pl-4 relative">
+                      <span className="absolute -left-[7px] top-3 w-3 h-3 rounded-full border-2 border-paper"
+                        style={{ background: FARM_PALETTE[i % FARM_PALETTE.length] }} />
+                      <button onClick={() => setSelectedPhase(i)}
+                        className={`w-full text-left rounded-lg px-2 py-1.5 transition-colors ${selectedPhase === i ? 'bg-emerald-500/10' : 'hover:bg-white/5'}`}>
+                        <div className={`text-sm font-bold ${selectedPhase === i ? 'text-emerald-400' : 'text-neutral-200'}`}>{p.phase}</div>
+                        <div className="text-xs text-neutral-500">{p.start === p.end ? p.start : `${p.start} – ${p.end}`}</div>
+                        {selectedPhase === i && <div className="text-xs text-neutral-300 mt-1 leading-relaxed">{phaseTip(p.phase)}</div>}
+                      </button>
+                    </li>
+                  )) : Array(5).fill(0).map((_, i) => <li key={i} className="h-9 rounded-lg shimmer ml-3 mb-1" />)}
+                </ol>
               </div>
             </div>
 
+            {/* MoSPI */}
+            {mospiSummary && (
+              <div className="glass-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="text-lg font-bold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>🇮🇳 India farm output</h2>
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-bold uppercase">
+                      <ShieldCheck size={11} /> MoSPI official
+                    </span>
+                  </div>
+                  <p className="text-sm text-neutral-500">
+                    Value of all crops in {mospiSummary.latest_year}: <b className="text-neutral-200">{mospiSummary.total_value.toLocaleString('en-IN')} {mospiSummary.unit}</b>
+                    {' '}· growing <b className="text-emerald-400">{mospiSummary.cagr}% a year</b>
+                  </p>
+                </div>
+                <button onClick={() => document.getElementById('nav-mospi')?.click()}
+                  className="shrink-0 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-cream text-sm font-bold transition-colors">
+                  See state-wise data →
+                </button>
+              </div>
+            )}
           </main>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-8 text-center text-xs text-neutral-700 pb-4">
-          Agri-Yield Pro v2.0 · AI-Powered Precision Agriculture · Weather via Open-Meteo
+        <div className="rangoli-divider mt-8" />
+        <footer className="mt-3 text-center text-xs text-neutral-500 pb-4">
+          Agri-Yield Pro · Made for Indian farmers 🌾 · Weather by Open-Meteo · Prices are indicative
         </footer>
       </div>
 
-      {/* Save Modal */}
+      {/* Save modal */}
       {showSaveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="glass-card w-full max-w-sm p-6 relative border border-emerald-500/20" style={{ background: '#08121a' }}>
-            <h3 className="text-lg font-bold text-white mb-2">Save Prediction</h3>
-            <p className="text-sm text-neutral-400 mb-4">Give a name to this prediction so you can load it later.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowSaveModal(false)}>
+          <form
+            className="glass-card w-full max-w-sm p-6"
+            onClick={e => e.stopPropagation()}
+            onSubmit={e => { e.preventDefault(); handleSavePlan(); }}
+          >
+            <h3 className="text-xl font-bold text-neutral-100 mb-1" style={{ fontFamily: 'Baloo 2' }}>Save this field</h3>
+            <p className="text-sm text-neutral-500 mb-4">Give it a name so you can find it later.</p>
             <input
-              type="text"
-              placeholder="e.g. Rice Field A - Optimal NPK"
-              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 mb-5"
-              value={saveName}
-              onChange={e => setSaveName(e.target.value)}
-              autoFocus
+              type="text" placeholder={`e.g. ${crop} — north field`} className="farm-input mb-5"
+              value={saveName} onChange={e => setSaveName(e.target.value)} autoFocus
             />
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowSaveModal(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
-              >
+              <button type="button" onClick={() => setShowSaveModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-neutral-400 hover:bg-white/5">
                 Cancel
               </button>
-              <button
-                onClick={handleSavePlan}
-                disabled={isSaving || !saveName}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                Save
+              <button type="submit" disabled={isSaving || !saveName.trim()}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-cream bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-2">
+                {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save
               </button>
             </div>
-          </div>
+          </form>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-neutral-100 text-cream text-sm font-semibold shadow-lg notification-toast">
+          {toast}
         </div>
       )}
     </div>

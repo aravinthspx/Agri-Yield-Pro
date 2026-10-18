@@ -54,10 +54,10 @@ const Register = () => {
         <div className="w-full max-w-xl relative z-10 bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-xl">
           <div className="flex items-center gap-3 mb-8 justify-center">
             <div className="p-2 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, rgba(52,211,153,0.2), rgba(16,185,129,0.1))', border: '1px solid rgba(52,211,153,0.2)' }}>
+              style={{ background: 'linear-gradient(135deg, rgba(47,125,50,0.2), rgba(47,125,50,0.1))', border: '1px solid rgba(47,125,50,0.2)' }}>
               <Sprout size={24} className="text-emerald-400" />
             </div>
-            <span className="text-xl font-bold gradient-text-emerald" style={{ fontFamily: 'Space Grotesk' }}>
+            <span className="text-xl font-bold gradient-text-emerald" style={{ fontFamily: 'Baloo 2' }}>
               Agri-Yield Pro
             </span>
           </div>

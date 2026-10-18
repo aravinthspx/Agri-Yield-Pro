@@ -32,6 +32,18 @@ interface AIChatBoxProps {
 
 import { API_BASE } from '../config';
 
+const CHAT_ACTIONS: Record<string, { label: string; nav: string }> = {
+  VIEW_WEATHER: { label: 'See weather', nav: 'nav-dashboard' },
+  VIEW_SOIL: { label: 'See soil health', nav: 'nav-dashboard' },
+  VIEW_CROP_HEALTH: { label: 'See crop health', nav: 'nav-dashboard' },
+  OPEN_MARKET: { label: 'See mandi prices', nav: 'nav-dashboard' },
+  VIEW_YIELD_PREDICTION: { label: 'Open yield optimizer', nav: 'nav-yield-optimizer' },
+  VIEW_CROP_PLAN: { label: 'Open my crop plan', nav: 'nav-crop-planning' },
+  UPDATE_PLAN: { label: 'Update my crop plan', nav: 'nav-crop-planning' },
+  CREATE_FARM_TASK: { label: 'Add to my crop plan', nav: 'nav-crop-planning' },
+  POSTPONE_IRRIGATION: { label: 'Adjust irrigation in plan', nav: 'nav-crop-planning' },
+};
+
 const CHAT_LANGUAGES = [
   { code: 'en', label: 'English', speech: 'en-IN' },
   { code: 'hi', label: 'हिन्दी', speech: 'hi-IN' },
@@ -132,6 +144,14 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({ userId, farmId, farmContext }) =>
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // Chat actions jump to the page that handles them (nav buttons live in App.tsx).
+  const runChatAction = (action: string) => {
+    const target = CHAT_ACTIONS[action]?.nav ?? 'nav-dashboard';
+    document.getElementById(target)?.click();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsOpen(false);
+  };
 
   const handleSend = async (overrideInput?: string) => {
     const textToSend = overrideInput || input;
@@ -276,20 +296,20 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({ userId, farmId, farmContext }) =>
         <div className="mb-4 w-[24rem] sm:w-[26rem] rounded-2xl overflow-hidden border border-emerald-500/30 shadow-2xl shadow-emerald-900/20 transform transition-all duration-300 flex flex-col"
           style={{ 
             height: '38rem',
-            background: 'rgba(5, 10, 14, 0.90)', 
+            background: 'rgba(251,246,234,0.90)', 
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)'
           }}>
           
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10"
-               style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(52,211,153,0.05))' }}>
+               style={{ background: 'linear-gradient(135deg, rgba(47,125,50,0.15), rgba(47,125,50,0.05))' }}>
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+              <div className="p-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(47,125,50,0.2)]">
                 <Bot size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white tracking-wide" style={{ fontFamily: 'Space Grotesk' }}>AI Farmer Assistant</h3>
+                <h3 className="text-sm font-bold text-white tracking-wide" style={{ fontFamily: 'Baloo 2' }}>AI Farmer Assistant</h3>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="flex items-center gap-1 text-[10px] text-emerald-400/80"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online</span>
                   <div className="h-2 w-[1px] bg-white/20"></div>
@@ -335,7 +355,7 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({ userId, farmId, farmContext }) =>
               <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'} animate-fade-in`}>
                 <div className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-lg ${
                   msg.sender === 'user' 
-                    ? 'bg-emerald-600 text-white rounded-br-sm' 
+                    ? 'bg-emerald-600 text-cream rounded-br-sm' 
                     : 'bg-white/5 border border-white/10 text-neutral-200 rounded-bl-sm backdrop-blur-md'
                 }`}>
                   {msg.sender === 'ai' ? renderFormattedMessage(msg.text) : msg.text}
@@ -354,8 +374,11 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({ userId, farmId, farmContext }) =>
                 
                 {msg.sender === 'ai' && typeof msg.action === 'string' && (
                   <div className="mt-2 ml-1">
-                    <button className="text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition-colors">
-                      Confirm Action: {msg.action.replace(/_/g, ' ')}
+                    <button
+                      onClick={() => runChatAction(msg.action!)}
+                      className="text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      {CHAT_ACTIONS[msg.action]?.label ?? `Open: ${msg.action.replace(/_/g, ' ').toLowerCase()}`} →
                     </button>
                   </div>
                 )}
@@ -394,7 +417,7 @@ const AIChatBox: React.FC<AIChatBoxProps> = ({ userId, farmId, farmContext }) =>
               <button 
                 onClick={() => handleSend()}
                 disabled={!input.trim() || isTyping}
-                className="p-2.5 rounded-lg bg-emerald-500 text-neutral-950 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                className="p-2.5 rounded-lg bg-emerald-500 text-neutral-950 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_10px_rgba(47,125,50,0.3)]"
               >
                 {isTyping ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} className="ml-0.5" />}
               </button>
