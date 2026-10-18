@@ -73,7 +73,7 @@ interface CropComparison {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../config';
 
 const RISK_COLOR: Record<string, string> = {
   Low: 'text-emerald-400', Medium: 'text-yellow-400', High: 'text-red-400',

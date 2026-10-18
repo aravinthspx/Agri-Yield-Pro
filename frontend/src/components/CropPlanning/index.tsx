@@ -176,7 +176,7 @@ import CropDetailView from './CropDetail';
 import PlanForm from './PlanForm';
 import CropPlanView from './CropPlanView';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../../config';
 
 export { API_BASE };
 

@@ -6,7 +6,7 @@ import {
   ShieldCheck, MapPin, Loader2, Info, ArrowUpRight, ArrowDownRight, ExternalLink, Download, FilterX, HelpCircle, Activity 
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../../config';
 
 interface MospiData {
   state: string;

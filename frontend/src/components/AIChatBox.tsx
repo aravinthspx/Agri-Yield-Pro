@@ -30,7 +30,7 @@ interface AIChatBoxProps {
   farmContext?: FarmContext;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../config';
 
 const CHAT_LANGUAGES = [
   { code: 'en', label: 'English', speech: 'en-IN' },

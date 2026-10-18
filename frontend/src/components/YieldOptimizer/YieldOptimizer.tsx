@@ -82,7 +82,7 @@ interface CropYieldOptimizationResponse {
   satellite_vegetation: SatelliteVegetation;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { API_BASE } from '../../config';
 
 export type Language = 'en' | 'hi' | 'te' | 'ml' | 'ta' | 'kn' | 'mr' | 'bn' | 'gu' | 'pa';
 
