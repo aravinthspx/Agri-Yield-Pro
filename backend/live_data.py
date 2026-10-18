@@ -86,7 +86,16 @@ def _upstream(fn: Callable[[], Any], source: str) -> Any:
         return fn()
     except HTTPException:
         raise
+    except urllib.error.HTTPError as exc:
+        body = ""
+        try:
+            body = exc.read().decode(errors="replace")[:160]
+        except Exception:
+            pass
+        print(f"[live] {source} HTTP {exc.code}: {body}", flush=True)
+        raise HTTPException(status_code=502, detail=f"{source} is not reachable right now (HTTP {exc.code}). Please try again.")
     except Exception as exc:  # network errors, bad JSON, timeouts
+        print(f"[live] {source} failed: {type(exc).__name__}: {exc}", flush=True)
         raise HTTPException(status_code=502, detail=f"{source} is not reachable right now ({type(exc).__name__}). Please try again.")
 
 
