@@ -266,7 +266,7 @@ def auth_config():
     """Tells the login page which sign-in options are live."""
     return {
         "google_client_id": GOOGLE_CLIENT_ID or None,
-        "sms_mode": "live" if sms_ready() else "development",
+        "sms_mode": "live" if sms_ready() else ("off" if APP_ENV == "production" else "development"),
     }
 
 
@@ -274,6 +274,8 @@ def auth_config():
 def otp_send(body: OtpSend, db: Session = Depends(get_db)):
     if body.purpose not in ("login", "reset"):
         raise HTTPException(status_code=400, detail="Unknown OTP purpose.")
+    if APP_ENV == "production" and not sms_ready():
+        raise HTTPException(status_code=503, detail="Mobile OTP is not switched on yet. Please log in with your email for now.")
     phone = normalize_phone(body.phone)
     if not find_user_by_phone(db, phone):
         raise HTTPException(status_code=404, detail="No account uses this mobile number. Please create an account first.")
