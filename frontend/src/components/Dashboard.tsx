@@ -366,13 +366,14 @@ export default function Dashboard() {
 
   // ── Share farm context with the AI chat box ──
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('updateFarmContext', {
-      detail: {
+    const detail = {
         crop, area, soil_ph: soilPh, nitrogen, phosphorus, potassium,
         temperature: liveInputs?.temperature, rain_probability: liveInputs?.rain_probability,
         lat: location.lat, lon: location.lon, state: location.state, is_simulation: false,
-      },
-    }));
+    };
+    // Kept on window too, so a chat box that mounts later still gets it.
+    (window as any).__farmContext = detail;
+    window.dispatchEvent(new CustomEvent('updateFarmContext', { detail }));
   }, [crop, area, soilPh, nitrogen, phosphorus, potassium, liveInputs?.temperature, liveInputs?.rain_probability, location]);
 
   // ── AI analysis (uses today's real weather) ──

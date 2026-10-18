@@ -40,7 +40,7 @@ export interface MandiData {
 }
 
 export interface MandiCompare {
-  source: string; unit: string;
+  source: string; unit: string; region?: string;
   crops: { crop: string; commodity: string; avg_modal: number | null; markets: number; latest_date: string | null }[];
 }
 
