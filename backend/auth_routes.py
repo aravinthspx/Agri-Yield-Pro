@@ -22,6 +22,7 @@ import json
 import os
 import re
 import secrets
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta
@@ -39,7 +40,21 @@ from database import get_db
 router = APIRouter(prefix="/api/auth", tags=["Accounts"])
 
 APP_ENV = os.environ.get("APP_ENV", "development")
-SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "").lower()
+SMS_PROVIDER = os.environ.get("SMS_PROVIDER", "").strip().lower()
+_SMS_KEYS = {
+    "fast2sms": ["FAST2SMS_API_KEY"],
+    "msg91": ["MSG91_AUTH_KEY", "MSG91_TEMPLATE_ID"],
+    "twilio": ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "TWILIO_FROM"],
+}
+
+
+def sms_ready() -> bool:
+    """A provider is chosen and all its keys are filled in."""
+    return SMS_PROVIDER in _SMS_KEYS and all(os.environ.get(k, "").strip() for k in _SMS_KEYS[SMS_PROVIDER])
+
+
+if SMS_PROVIDER and not sms_ready():
+    print(f"[SMS] SMS_PROVIDER={SMS_PROVIDER!r} but its keys are missing — running OTP in development mode.", flush=True)
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 
 OTP_TTL = timedelta(minutes=5)
@@ -123,22 +138,52 @@ def get_current_user(authorization: Optional[str] = Header(None), db: Session = 
 
 # ─── SMS ─────────────────────────────────────────────────────────────────────
 
-def _post(url: str, data: dict, headers: dict, form: bool = False):
+class SmsError(Exception):
+    """Provider refused the message; the text is safe to show the user."""
+
+
+def _post(url: str, data: dict, headers: dict, form: bool = False) -> dict:
     body = urllib.parse.urlencode(data).encode() if form else json.dumps(data).encode()
-    headers = {"Content-Type": "application/x-www-form-urlencoded" if form else "application/json", **headers}
+    headers = {"Content-Type": "application/x-www-form-urlencoded" if form else "application/json",
+               "Accept": "application/json", "User-Agent": "AgriYieldPro/1.0", **headers}
     req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return r.read()
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            raw = r.read()
+    except urllib.error.HTTPError as e:  # providers put the reason in the error body
+        raw = e.read()
+    try:
+        return json.loads(raw or b"{}")
+    except json.JSONDecodeError:
+        return {"raw": raw.decode(errors="replace")[:200]}
+
+
+def _fast2sms_send(local_number: str, code: str):
+    """Fast2SMS. FAST2SMS_ROUTE=otp (default, needs the OTP route enabled on your
+    account) or q (Quick SMS — works on new accounts, costs a little more)."""
+    route = os.environ.get("FAST2SMS_ROUTE", "otp").strip().lower()
+    if route == "q":
+        data = {"route": "q", "numbers": local_number, "flash": "0",
+                "message": f"{code} is your Agri-Yield Pro login code. Valid 5 minutes. Do not share it."}
+    else:
+        data = {"route": "otp", "variables_values": code, "numbers": local_number, "flash": "0"}
+    r = _post("https://www.fast2sms.com/dev/bulkV2", data, {"authorization": os.environ["FAST2SMS_API_KEY"].strip()})
+    if r.get("return") is not True:
+        msg = r.get("message") or r.get("raw") or "unknown error"
+        if isinstance(msg, list):
+            msg = "; ".join(map(str, msg))
+        raise SmsError(f"Fast2SMS: {msg}")
 
 
 def send_sms_otp(phone: str, code: str) -> bool:
     """Returns True when a real SMS was sent, False in development mode."""
     local = phone[3:]
+    if not sms_ready():
+        print(f"[DEV OTP] {phone} -> {code}  (set SMS_PROVIDER and its key in backend/.env to send real SMS)", flush=True)
+        return False
     try:
         if SMS_PROVIDER == "fast2sms":
-            _post("https://www.fast2sms.com/dev/bulkV2",
-                  {"route": "otp", "variables_values": code, "numbers": local},
-                  {"authorization": os.environ["FAST2SMS_API_KEY"]})
+            _fast2sms_send(local, code)
             return True
         if SMS_PROVIDER == "msg91":
             _post("https://control.msg91.com/api/v5/otp?" + urllib.parse.urlencode(
@@ -152,11 +197,12 @@ def send_sms_otp(phone: str, code: str) -> bool:
                   {"To": phone, "From": os.environ["TWILIO_FROM"], "Body": f"Agri-Yield Pro code: {code}. Valid 5 minutes. Do not share it."},
                   {"Authorization": f"Basic {auth}"}, form=True)
             return True
-    except KeyError as missing:
-        raise HTTPException(status_code=500, detail=f"SMS is not configured: missing {missing} on the server.")
-    except Exception:
+    except SmsError as err:
+        print(f"[SMS] send failed: {err}", flush=True)
+        raise HTTPException(status_code=502, detail=f"Could not send the SMS ({err}). Please try again later.")
+    except Exception as err:
+        print(f"[SMS] send failed: {type(err).__name__}: {err}", flush=True)
         raise HTTPException(status_code=502, detail="Could not send the SMS right now. Please try again.")
-    print(f"[DEV OTP] {phone} -> {code}  (set SMS_PROVIDER to send real SMS)", flush=True)
     return False
 
 
@@ -220,7 +266,7 @@ def auth_config():
     """Tells the login page which sign-in options are live."""
     return {
         "google_client_id": GOOGLE_CLIENT_ID or None,
-        "sms_mode": "live" if SMS_PROVIDER else "development",
+        "sms_mode": "live" if sms_ready() else "development",
     }
 
 

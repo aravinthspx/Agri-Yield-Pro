@@ -1,3 +1,8 @@
+# Load private settings (API keys etc.) from backend/.env before anything reads them.
+from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).with_name(".env"))
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel

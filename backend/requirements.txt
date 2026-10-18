@@ -11,3 +11,4 @@ pyjwt
 sqlalchemy
 pydantic
 pytest
+python-dotenv
