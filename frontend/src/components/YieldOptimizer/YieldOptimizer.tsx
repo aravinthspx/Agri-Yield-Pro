@@ -108,6 +108,74 @@ export const INDIAN_LANGUAGES: LanguageOption[] = [
   { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
 ];
 
+const CROP_ICONS: Record<string, string> = {
+  'Rice': '🌾', 'Banana': '🍌', 'Groundnut': '🥜', 'Turmeric': '🟡', 'Finger Millet (Ragi)': '🌾', 'Black Gram (Urad)': '🫘',
+  'Chilli': '🌶️', 'Sugarcane': '🎋', 'Cotton': '☁️', 'Tomato': '🍅', 'Maize (Corn)': '🌽', 'Sunflower': '🌻',
+  'Barley': '🌿', 'Wheat': '🌿', 'Potato': '🥔', 'Chickpea': '🫘',
+};
+const SOIL_COLORS: Record<string, string> = {
+  'Red Soil': '#B5502E', 'Laterite': '#A0522D', 'Black / Alluvial': '#3E3A36', 'Clay': '#8B6B4A', 'Loamy': '#6B4F2E',
+  'Sandy Loam': '#C9A46A', 'Coastal Sandy': '#E3CFA0', 'Peaty': '#3B2F23', 'Silt': '#9C8B70', 'Chalky': '#E6E0D2',
+};
+const SOIL_NOTES: Record<string, string> = {
+  'Red Soil': 'Most of TN, KA, AP · drains fast',
+  'Laterite': 'Kerala & coastal KA · acidic',
+  'Black / Alluvial': 'Cotton soil · river deltas',
+  'Clay': 'Holds water · paddy fields',
+  'Loamy': 'Balanced · good for most crops',
+  'Sandy Loam': 'Light · groundnut, vegetables',
+  'Coastal Sandy': 'Coconut & cashew belts',
+  'Peaty': 'Waterlogged, organic',
+  'Silt': 'Fine river soil',
+  'Chalky': 'Lime-rich, alkaline',
+};
+
+function StepTitle({ n, title, hint }: { n: number; title: string; hint?: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <span className="w-6 h-6 rounded-full bg-emerald-500 text-cream text-xs font-bold flex items-center justify-center">{n}</span>
+      <h3 className="text-base font-bold text-neutral-100">{title}</h3>
+      {hint && <span className="text-xs text-neutral-500">· {hint}</span>}
+    </div>
+  );
+}
+
+/** Range + number input with the crop's ideal zone drawn on the track. */
+function IdealSlider({ label, value, onChange, min, max, step, unit, ideal }: {
+  label: string; value: number; onChange: (v: number) => void; min: number; max: number; step: number; unit: string; ideal?: [number, number];
+}) {
+  const pct = (v: number) => Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
+  const status = !ideal ? null : value < ideal[0] ? 'low' : value > ideal[1] ? 'high' : 'ok';
+  const track = ideal
+    ? `linear-gradient(to right, #E6DAC4 0%, #E6DAC4 ${pct(ideal[0])}%, rgba(47,125,50,0.45) ${pct(ideal[0])}%, rgba(47,125,50,0.45) ${pct(ideal[1])}%, #E6DAC4 ${pct(ideal[1])}%, #E6DAC4 100%)`
+    : `linear-gradient(to right, #2F7D32 0%, #2F7D32 ${pct(value)}%, #E6DAC4 ${pct(value)}%, #E6DAC4 100%)`;
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <span className="text-sm font-semibold text-neutral-300">{label}</span>
+        <div className="flex items-center gap-2">
+          {status && (
+            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${status === 'ok'
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              : 'bg-amber-500/15 text-amber-400 border-amber-500/40'}`}>
+              {status === 'ok' ? 'Ideal' : status === 'low' ? 'Too low' : 'Too high'}
+            </span>
+          )}
+          <div className="flex items-center rounded-lg border border-neutral-800 focus-within:border-emerald-400">
+            <input type="number" min={min} max={max} step={step} value={value}
+              onChange={e => { const v = parseFloat(e.target.value); if (Number.isFinite(v)) onChange(v); }}
+              className="w-16 bg-transparent text-right text-sm font-bold text-neutral-100 px-2 py-1 outline-none" aria-label={label} />
+            {unit && <span className="text-xs text-neutral-500 pr-2">{unit}</span>}
+          </div>
+        </div>
+      </div>
+      <input type="range" className="ideal-range" min={min} max={max} step={step} value={value} aria-label={`${label} slider`}
+        onChange={e => onChange(parseFloat(e.target.value))} style={{ background: track }} />
+      {ideal && <div className="text-[11px] text-neutral-500 mt-1">Ideal: {ideal[0]} – {ideal[1]} {unit}</div>}
+    </div>
+  );
+}
+
 const TRANSLATIONS: Record<Language, Record<string, string>> = {
   en: {
     title: 'AI-Powered Crop Yield Prediction & Optimization System',
@@ -543,9 +611,17 @@ const CROP_TRANSLATIONS: Record<string, Partial<Record<Language, string>>> = {
   'Sugarcane': { hi: 'गन्ना', te: 'చెరకు', ml: 'കരിമ്പ്', ta: 'கரும்பு', kn: 'ಕಬ್ಬು', mr: 'ऊस', bn: 'আখ', gu: 'શેરડી', pa: 'ਗੰਨਾ' },
   'Chickpea': { hi: 'चना', te: 'శనగలు', ml: 'കടല', ta: 'கொண்டைக்கடலை', kn: 'ಕಡಲೆ', mr: 'हरभरा', bn: 'ছোলা', gu: 'ચણા', pa: 'ਛੋਲੇ' },
   'Groundnut': { hi: 'मूंगफली', te: 'వేరుశెనగ', ml: 'നിലക്കടല', ta: 'நிலக்கடலை', kn: 'ಕಡಲೆಕಾಯಿ', mr: 'भुईमूग', bn: 'চীনাবাদাম', gu: 'મગફળી', pa: 'ਮੂੰਗਫਲੀ' },
+  'Banana': { hi: 'केला', te: 'అరటి', ml: 'വാഴ', ta: 'வாழை', kn: 'ಬಾಳೆ', mr: 'केळी', bn: 'কলা', gu: 'કેળા', pa: 'ਕੇਲਾ' },
+  'Turmeric': { hi: 'हल्दी', te: 'పసుపు', ml: 'മഞ്ഞൾ', ta: 'மஞ்சள்', kn: 'ಅರಿಶಿನ', mr: 'हळद', bn: 'হলুদ', gu: 'હળદર', pa: 'ਹਲਦੀ' },
+  'Finger Millet (Ragi)': { hi: 'रागी / मंडुआ', te: 'రాగి', ml: 'റാഗി / മുത്താറി', ta: 'கேழ்வரகு / ராகி', kn: 'ರಾಗಿ', mr: 'नाचणी', bn: 'মারুয়া', gu: 'નાગલી', pa: 'ਰਾਗੀ' },
+  'Black Gram (Urad)': { hi: 'उड़द', te: 'మినుములు', ml: 'ഉഴുന്ന്', ta: 'உளுந்து', kn: 'ಉದ್ದು', mr: 'उडीद', bn: 'কলাই', gu: 'અડદ', pa: 'ਮਾਂਹ' },
+  'Chilli': { hi: 'मिर्च', te: 'మిరప', ml: 'മുളക്', ta: 'மிளகாய்', kn: 'ಮೆಣಸಿನಕಾಯಿ', mr: 'मिरची', bn: 'লঙ্কা', gu: 'મરચું', pa: 'ਮਿਰਚ' },
 };
 
 const SOIL_TRANSLATIONS: Record<string, Partial<Record<Language, string>>> = {
+  'Red Soil': { hi: 'लाल मिट्टी', te: 'ఎర్ర నేల', ml: 'ചുവന്ന മണ്ണ്', ta: 'செம்மண்', kn: 'ಕೆಂಪು ಮಣ್ಣು', mr: 'लाल माती', bn: 'লাল মাটি', gu: 'લાલ જમીન', pa: 'ਲਾਲ ਮਿੱਟੀ' },
+  'Laterite': { hi: 'लेटराइट मिट्टी', te: 'లేటరైట్ నేల', ml: 'വെട്ടുകൽ മണ്ണ്', ta: 'சரளை மண்', kn: 'ಜಂಬಿಟ್ಟಿಗೆ ಮಣ್ಣು', mr: 'जांभा माती', bn: 'ল্যাটেরাইট মাটি', gu: 'લેટેરાઇટ જમીન', pa: 'ਲੈਟਰਾਈਟ ਮਿੱਟੀ' },
+  'Coastal Sandy': { hi: 'तटीय रेतीली', te: 'తీర ఇసుక నేల', ml: 'തീരദേശ മണൽ', ta: 'கடலோர மணல்', kn: 'ಕರಾವಳಿ ಮರಳು', mr: 'किनारी वालुकामय', bn: 'উপকূলীয় বালি', gu: 'દરિયાકાંઠાની રેતાળ', pa: 'ਤੱਟੀ ਰੇਤਲੀ' },
   'Loamy': { hi: 'दोमट मिट्टी', te: 'ఒండ్రు నేల (లోమి)', ml: 'എക്കൽ മണ്ണ്', ta: 'வண்டல் மண்', kn: 'ಗೋಡು ಮಣ್ಣು', mr: 'गाळाची माती', bn: 'দোআঁশ মাটি', gu: 'ગોરાડુ જમીન', pa: 'ਦੋਮਟ ਮਿੱਟੀ' },
   'Clay': { hi: 'चिकनी मिट्टी', te: 'జిగట నేల (క్లే)', ml: 'കളിമണ്ണ്', ta: 'களிமண்', kn: 'ಜೇಡಿ ಮಣ್ಣು', mr: 'काळी चिकनमाती', bn: 'এঁটেল মাটি', gu: 'કાળી ચીકણી જમીન', pa: 'ਚੀਕਣੀ ਮਿੱਟੀ' },
   'Sandy Loam': { hi: 'बलुई दोमट', te: 'ఇసుక ఒండ్రు నేల', ml: 'മണൽ കലർന്ന മണ്ണ്', ta: 'மணல் வண்டல் மண்', kn: 'ಮರಳು ಮಿಶ್ರಿತ ಮಣ್ಣು', mr: 'वालुकामय माती', bn: 'বেলে দোআঁশ', gu: 'રેતાળ ગોરાડુ', pa: 'ਰੇਤਲੀ ਦੋਮਟ' },
@@ -567,19 +643,23 @@ export default function YieldOptimizer() {
     'Loamy', 'Clay', 'Sandy Loam', 'Black / Alluvial', 'Peaty', 'Silt', 'Chalky'
   ]);
   const [presets, setPresets] = useState<any[]>([]);
+  const [idealRanges, setIdealRanges] = useState<Record<string, Record<string, [number, number]>>>({});
+  const [cropSoils, setCropSoils] = useState<Record<string, string[]>>({});
+  const [liveMode, setLiveMode] = useState(true);
+  const [predictError, setPredictError] = useState('');
 
-  // Form State
-  const [crop, setCrop] = useState('Sunflower');
-  const [soilType, setSoilType] = useState('Peaty');
-  const [soilPh, setSoilPh] = useState(4.0);
-  const [temperature, setTemperature] = useState(45.0);
-  const [humidity, setHumidity] = useState(86.0);
-  const [windSpeed, setWindSpeed] = useState(6.0);
-  const [nitrogen, setNitrogen] = useState(32.0);
-  const [phosphorus, setPhosphorus] = useState(42.0);
-  const [potassium, setPotassium] = useState(35.0);
-  const [soilQuality, setSoilQuality] = useState(3.0);
-  const [areaAcres, setAreaAcres] = useState(2.5);
+  // Form State — defaults: Samba paddy in Tamil Nadu clay soil
+  const [crop, setCrop] = useState('Rice');
+  const [soilType, setSoilType] = useState('Clay');
+  const [soilPh, setSoilPh] = useState(6.8);
+  const [temperature, setTemperature] = useState(28.0);
+  const [humidity, setHumidity] = useState(78.0);
+  const [windSpeed, setWindSpeed] = useState(9.0);
+  const [nitrogen, setNitrogen] = useState(120.0);
+  const [phosphorus, setPhosphorus] = useState(40.0);
+  const [potassium, setPotassium] = useState(40.0);
+  const [soilQuality, setSoilQuality] = useState(4.0);
+  const [areaAcres, setAreaAcres] = useState(2.0);
 
   // Results State
   const [isLoading, setIsLoading] = useState(false);
@@ -608,6 +688,8 @@ export default function YieldOptimizer() {
         if (data.crops) setCropsList(data.crops);
         if (data.soil_types) setSoilTypesList(data.soil_types);
         if (data.presets) setPresets(data.presets);
+        if (data.ideal_ranges) setIdealRanges(data.ideal_ranges);
+        if (data.crop_soils) setCropSoils(data.crop_soils);
       })
       .catch(err => console.error("Could not load crops meta", err));
   }, []);
@@ -654,10 +736,9 @@ export default function YieldOptimizer() {
 
   useEffect(() => { handleFetchLiveWeather(); }, [handleFetchLiveWeather]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const runPrediction = useCallback(async (scrollToResults: boolean) => {
     setIsLoading(true);
-
+    setPredictError('');
     try {
       const payload = {
         crop,
@@ -670,29 +751,54 @@ export default function YieldOptimizer() {
         phosphorus: Number(phosphorus),
         potassium: Number(potassium),
         soil_quality: Number(soilQuality),
-        area_acres: Number(areaAcres)
+        area_acres: Number(areaAcres),
+        state: farmLocation.state,
       };
-
       const res = await fetch(`${API_BASE}/api/ml/predict-yield`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       if (!res.ok) throw new Error("Prediction API failed");
       const data: CropYieldOptimizationResponse = await res.json();
       setResult(data);
-
-      setTimeout(() => {
-        document.getElementById('optimization-results-section')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      if (scrollToResults) {
+        setTimeout(() => {
+          document.getElementById('optimization-results-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
     } catch (err) {
       console.error(err);
-      alert("Failed to compute yield prediction. Please verify the backend is running.");
+      setPredictError('Could not reach the prediction server. Please check that the backend is running.');
     } finally {
       setIsLoading(false);
     }
+  }, [crop, soilType, soilPh, temperature, humidity, windSpeed, nitrogen, phosphorus, potassium, soilQuality, areaAcres, farmLocation.state]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    runPrediction(true);
   };
+
+  // Live mode: re-predict shortly after any change.
+  useEffect(() => {
+    if (!liveMode) return;
+    const timer = window.setTimeout(() => runPrediction(false), 600);
+    return () => window.clearTimeout(timer);
+  }, [liveMode, runPrediction]);
+
+  const SOUTH_FIRST = ['Rice', 'Banana', 'Groundnut', 'Turmeric', 'Finger Millet (Ragi)', 'Black Gram (Urad)', 'Chilli', 'Sugarcane', 'Cotton', 'Tomato', 'Maize (Corn)'];
+  const sortedCrops = [...cropsList].sort((a, b) => {
+    const ia = SOUTH_FIRST.indexOf(a), ib = SOUTH_FIRST.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+  const sortedSoils = [...soilTypesList].sort((a, b) => Number(!!cropSoils[crop]?.includes(b)) - Number(!!cropSoils[crop]?.includes(a)));
+  const currentValues: Record<string, number> = {
+    soil_ph: soilPh, temperature, humidity, wind_speed: windSpeed, nitrogen, phosphorus, potassium, soil_quality: soilQuality,
+  };
+  const ideals = idealRanges[crop] ?? {};
+  const idealTotal = Object.keys(ideals).length;
+  const idealCount = Object.entries(ideals).filter(([k, [lo, hi]]) => currentValues[k] >= lo && currentValues[k] <= hi).length;
 
   const handlePrint = () => {
     window.print();
@@ -877,7 +983,7 @@ export default function YieldOptimizer() {
               onClick={() => handleApplyPreset(p.data)}
               className="text-xs px-3 py-1.5 rounded-lg bg-neutral-800/80 hover:bg-emerald-500/20 text-neutral-200 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/30 transition-all"
             >
-              {p.name.split(':')[0]}
+              {p.name.startsWith('Paper') ? p.name.split(':')[0] : p.name}
             </button>
           ))}
         </div>
@@ -895,246 +1001,136 @@ export default function YieldOptimizer() {
         {weatherNote && <span className="text-xs font-semibold text-neutral-400 basis-full md:basis-auto">{weatherNote}</span>}
       </div>
 
-      {/* ── Main Input Form (Matching Paper Figures 4 & 5) ── */}
-      <form onSubmit={handleSubmit} className="glass-card p-6 md:p-8 rounded-2xl border border-white/10 mb-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex items-center gap-2.5 mb-6 border-b border-white/10 pb-4">
-          <FlaskConical size={20} className="text-emerald-400" />
-          <h2 className="text-base md:text-lg font-semibold text-white tracking-wide">
-            {t.enterDetails}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-          {/* Column 1 */}
-          <div className="space-y-4">
-            {/* Soil pH */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex justify-between">
-                <span>{t.soilPh}</span>
-                <span className="text-neutral-500">Value: {soilPh}</span>
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                min="3.0"
-                max="10.0"
-                value={soilPh}
-                onChange={e => setSoilPh(parseFloat(e.target.value) || 0)}
-                className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                required
-              />
+      {/* ── Interactive Input Form ── */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-8">
+        <div className="xl:col-span-8 glass-card p-5 md:p-7 space-y-7">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800 pb-4">
+            <div className="flex items-center gap-2.5">
+              <FlaskConical size={20} className="text-emerald-400" />
+              <h2 className="text-lg font-bold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>{t.enterDetails}</h2>
             </div>
-
-            {/* Humidity */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex justify-between">
-                <span>{t.humidity}</span>
-                <span className="text-neutral-500">{humidity}%</span>
-              </label>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                max="100"
-                value={humidity}
-                onChange={e => setHumidity(parseFloat(e.target.value) || 0)}
-                className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                required
-              />
-            </div>
-
-            {/* Nitrogen */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex justify-between">
-                <span>{t.nitrogen} (kg/ha)</span>
-                <span className="text-neutral-500">{nitrogen} kg/ha</span>
-              </label>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                max="300"
-                value={nitrogen}
-                onChange={e => setNitrogen(parseFloat(e.target.value) || 0)}
-                className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                required
-              />
-            </div>
-
-            {/* Soil Quality Rating */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex justify-between">
-                <span>{t.soilQuality}</span>
-                <span className="text-emerald-400 font-semibold">{soilQuality} / 5</span>
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                min="1.0"
-                max="5.0"
-                value={soilQuality}
-                onChange={e => setSoilQuality(parseFloat(e.target.value) || 1)}
-                className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                required
-              />
-            </div>
-
-            {/* Soil Type Dropdown with Regional Names */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                {t.soilType}
-              </label>
-              <div className="relative">
-                <select
-                  value={soilType}
-                  onChange={e => setSoilType(e.target.value)}
-                  className="w-full appearance-none bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors pr-10"
-                >
-                  {soilTypesList.map((st, i) => (
-                    <option key={i} value={st} className="bg-neutral-900 text-white">
-                      {formatSoilLabel(st)}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3.5 top-3.5 text-neutral-400 pointer-events-none" />
-              </div>
-            </div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-neutral-300 cursor-pointer select-none">
+              <input type="checkbox" checked={liveMode} onChange={e => setLiveMode(e.target.checked)} className="w-4 h-4 accent-[#2F7D32]" />
+              Update result as I change values
+            </label>
           </div>
 
-          {/* Column 2 */}
-          <div className="space-y-4">
-            {/* Temperature */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex justify-between">
-                <span>{t.temp}</span>
-                <span className="text-neutral-500">{temperature}°C</span>
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="-10"
-                max="60"
-                value={temperature}
-                onChange={e => setTemperature(parseFloat(e.target.value) || 0)}
-                className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                required
-              />
+          {/* Step 1 — crop */}
+          <section>
+            <StepTitle n={1} title={t.cropType} hint="South Indian crops first" />
+            <div className="flex flex-wrap gap-2">
+              {sortedCrops.map(c => (
+                <button key={c} type="button" onClick={() => setCrop(c)} aria-pressed={crop === c}
+                  className={`chip ${crop === c ? 'active' : ''}`}>
+                  <span>{CROP_ICONS[c] ?? '🌱'}</span>{formatCropLabel(c)}
+                </button>
+              ))}
             </div>
+          </section>
 
-            {/* Wind Speed */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5 flex justify-between">
-                <span>{t.windSpeed}</span>
-                <span className="text-neutral-500">{windSpeed} km/h</span>
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="100"
-                value={windSpeed}
-                onChange={e => setWindSpeed(parseFloat(e.target.value) || 0)}
-                className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                required
-              />
+          {/* Step 2 — soil */}
+          <section>
+            <StepTitle n={2} title={t.soilType} hint={cropSoils[crop]?.length ? `⭐ = good soil for ${crop}` : undefined} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {sortedSoils.map(st => {
+                const good = cropSoils[crop]?.includes(st);
+                return (
+                  <button key={st} type="button" onClick={() => setSoilType(st)} aria-pressed={soilType === st}
+                    className={`text-left rounded-xl border p-2.5 transition-all ${soilType === st
+                      ? 'border-emerald-400 bg-emerald-500/10 ring-2 ring-emerald-500/20'
+                      : 'border-neutral-800 hover:border-emerald-400 bg-neutral-950/60'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full shrink-0 border border-black/10" style={{ background: SOIL_COLORS[st] ?? '#C9B89F' }} />
+                      <span className="text-sm font-bold text-neutral-100 leading-tight">{formatSoilLabel(st)}</span>
+                      {good && <span title={`Good for ${crop}`}>⭐</span>}
+                    </div>
+                    <div className="text-[11px] text-neutral-500 mt-1 leading-snug">{SOIL_NOTES[st] ?? ''}</div>
+                  </button>
+                );
+              })}
             </div>
+          </section>
 
-            {/* Phosphorus & Potassium */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                  {t.phosphorus}
-                </label>
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  max="200"
-                  value={phosphorus}
-                  onChange={e => setPhosphorus(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                  {t.potassium}
-                </label>
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  max="200"
-                  value={potassium}
-                  onChange={e => setPotassium(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                  required
-                />
-              </div>
+          {/* Step 3 — sliders */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="md:col-span-2"><StepTitle n={3} title="Field conditions" hint="Green band = ideal for this crop" /></div>
+            <div className="space-y-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-orange-400 flex items-center gap-1.5"><Sun size={13} /> Weather {weatherNote.startsWith('⚠') ? '' : '· live'}</div>
+              <IdealSlider label={t.temp} value={temperature} onChange={setTemperature} min={5} max={50} step={0.5} unit="°C" ideal={idealRanges[crop]?.temperature} />
+              <IdealSlider label={t.humidity} value={humidity} onChange={setHumidity} min={0} max={100} step={1} unit="%" ideal={idealRanges[crop]?.humidity} />
+              <IdealSlider label={t.windSpeed} value={windSpeed} onChange={setWindSpeed} min={0} max={60} step={0.5} unit="km/h" ideal={idealRanges[crop]?.wind_speed} />
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5 pt-2"><Layers size={13} /> Soil</div>
+              <IdealSlider label={t.soilPh} value={soilPh} onChange={setSoilPh} min={3} max={10} step={0.1} unit="" ideal={idealRanges[crop]?.soil_ph} />
+              <IdealSlider label={t.soilQuality} value={soilQuality} onChange={setSoilQuality} min={1} max={5} step={0.1} unit="/5" ideal={idealRanges[crop]?.soil_quality} />
             </div>
+            <div className="space-y-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5"><Droplets size={13} /> Fertilizer (kg/ha)</div>
+              <IdealSlider label={`${t.nitrogen} · Urea`} value={nitrogen} onChange={setNitrogen} min={0} max={400} step={5} unit="kg" ideal={idealRanges[crop]?.nitrogen} />
+              <IdealSlider label={`${t.phosphorus} · DAP / SSP`} value={phosphorus} onChange={setPhosphorus} min={0} max={300} step={5} unit="kg" ideal={idealRanges[crop]?.phosphorus} />
+              <IdealSlider label={`${t.potassium} · MOP`} value={potassium} onChange={setPotassium} min={0} max={400} step={5} unit="kg" ideal={idealRanges[crop]?.potassium} />
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5 pt-2"><Calendar size={13} /> Land</div>
+              <IdealSlider label={t.area} value={areaAcres} onChange={setAreaAcres} min={0.5} max={50} step={0.5} unit="acre" />
+            </div>
+          </section>
 
-            {/* Crop Type Dropdown with Regional Names */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                {t.cropType}
-              </label>
-              <div className="relative">
-                <select
-                  value={crop}
-                  onChange={e => setCrop(e.target.value)}
-                  className="w-full appearance-none bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors pr-10"
-                >
-                  {cropsList.map((c, i) => (
-                    <option key={i} value={c} className="bg-neutral-900 text-white">
-                      {formatCropLabel(c)}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3.5 top-3.5 text-neutral-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Area in Acres */}
-            <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-                {t.area}
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                min="0.1"
-                max="1000"
-                value={areaAcres}
-                onChange={e => setAreaAcres(parseFloat(e.target.value) || 1)}
-                className="w-full bg-neutral-900/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                required
-              />
-            </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-neutral-800">
+            {predictError ? <p className="text-sm text-red-400 flex items-center gap-1.5"><AlertTriangle size={15} />{predictError}</p> : <span />}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-cream font-bold text-sm tracking-wide shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {isLoading ? <><RefreshCw size={16} className="animate-spin" />{t.predicting}</> : <><Sparkles size={16} />{t.predictBtn}</>}
+            </button>
           </div>
         </div>
 
-        {/* Submit Button */}
-        <div className="mt-8 pt-5 border-t border-white/10 flex justify-end">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-neutral-950 font-bold text-sm tracking-wide shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            {isLoading ? (
+        {/* Live result preview */}
+        <aside className="xl:col-span-4">
+          <div className="glass-card p-5 xl:sticky xl:top-20 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>{CROP_ICONS[crop] ?? '🌱'} Live result</h3>
+              {isLoading && <RefreshCw size={15} className="animate-spin text-neutral-500" />}
+            </div>
+            {result ? (
               <>
-                <RefreshCw size={16} className="animate-spin" />
-                {t.predicting}
+                <div className={`rounded-2xl p-4 text-center border ${result.yield_classification === 'High Yield' ? 'bg-emerald-500/10 border-emerald-500/30' : result.yield_classification === 'Medium Yield' ? 'bg-amber-500/15 border-amber-500/40' : 'bg-red-500/10 border-red-500/30'}`}>
+                  <div className="text-xs font-semibold text-neutral-500">Expected yield</div>
+                  <div className="text-4xl font-extrabold text-neutral-100" style={{ fontFamily: 'Baloo 2' }}>{result.predicted_yield} <span className="text-base font-bold text-neutral-500">t/ha</span></div>
+                  <div className="text-sm font-bold mt-1" style={{ color: result.yield_classification === 'High Yield' ? '#2F7D32' : result.yield_classification === 'Medium Yield' ? '#A9690F' : '#C0392B' }}>{result.yield_classification}</div>
+                  <div className="text-xs text-neutral-500 mt-1">≈ {(result.predicted_yield * 10 / 2.471).toFixed(1)} quintal per acre · {result.total_estimated_yield} t total on {areaAcres} acre</div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-semibold text-neutral-300">Conditions in ideal range</span>
+                    <span className="font-bold text-neutral-100">{idealCount} / {idealTotal}</span>
+                  </div>
+                  <div className="progress-bar-track h-2.5"><div className="progress-bar-fill bg-emerald-500" style={{ width: `${idealTotal ? (idealCount / idealTotal) * 100 : 0}%` }} /></div>
+                </div>
+                {result.economic_analysis && (
+                  <div className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-3 text-sm">
+                    <div className="font-semibold text-neutral-300">💰 Price used: ₹{Math.round(result.economic_analysis.crop_msp_per_quintal_inr).toLocaleString('en-IN')}/qtl</div>
+                    <div className="text-xs text-neutral-500">{(result.economic_analysis as any).price_source}{(result.economic_analysis as any).price_date ? ` · ${(result.economic_analysis as any).price_date}` : ''}</div>
+                  </div>
+                )}
+                {result.suggestions?.length > 0 && (
+                  <div>
+                    <div className="text-sm font-semibold text-neutral-300 mb-1.5">Top things to fix</div>
+                    <ul className="space-y-1.5">
+                      {result.suggestions.slice(0, 3).map((s, i) => <li key={i} className="text-sm text-neutral-300 leading-snug">👉 {s}</li>)}
+                    </ul>
+                  </div>
+                )}
+                <button type="button" onClick={() => document.getElementById('optimization-results-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="w-full py-2.5 rounded-xl border border-neutral-800 hover:bg-emerald-500/10 hover:text-emerald-400 text-sm font-bold text-neutral-200">
+                  See full analysis ↓
+                </button>
               </>
             ) : (
-              <>
-                <Sparkles size={16} />
-                {t.predictBtn}
-              </>
+              <p className="text-sm text-neutral-500">{isLoading ? 'Calculating…' : 'Change any value to see the expected yield here.'}</p>
             )}
-          </button>
-        </div>
+          </div>
+        </aside>
       </form>
 
       {/* ── Results & Optimization Section ── */}

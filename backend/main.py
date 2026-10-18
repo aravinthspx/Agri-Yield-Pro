@@ -1155,7 +1155,7 @@ def live_market_info(crop_name: str, state: Optional[str], est_yield_t: float) -
             "data_source": "Live mandi prices unavailable right now"}
     for scope in ([state] if state else []) + [None]:
         try:
-            d = mandi_prices(crop=crop_name, state=scope, max_records=40)
+            d = mandi_prices(crop=crop_name, state=scope, region=None, max_records=40)
         except HTTPException:
             continue
         if not d["summary"]:

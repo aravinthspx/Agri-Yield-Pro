@@ -7,11 +7,13 @@ import { useFarmLocation } from '../../lib/farmLocation';
 import { useLive, qs, rupees, timeAgo, prettyDate, type MandiData, type IndiaIndicators } from '../../lib/live';
 import LocationPicker from '../LocationPicker';
 
+// South Indian crops first.
 const COMMODITIES = [
-  { crop: 'Rice', icon: '🍚' }, { crop: 'Paddy', icon: '🌾' }, { crop: 'Wheat', icon: '🌿' }, { crop: 'Maize', icon: '🌽' },
-  { crop: 'Cotton', icon: '☁️' }, { crop: 'Groundnut', icon: '🥜' }, { crop: 'Soybean', icon: '🫘' }, { crop: 'Mustard', icon: '🌼' },
-  { crop: 'Chickpea', icon: '🫘' }, { crop: 'Tomato', icon: '🍅' }, { crop: 'Onion', icon: '🧅' }, { crop: 'Potato', icon: '🥔' },
-  { crop: 'Banana', icon: '🍌' }, { crop: 'Turmeric', icon: '🟡' }, { crop: 'Chilli', icon: '🌶️' }, { crop: 'Garlic', icon: '🧄' },
+  { crop: 'Paddy', icon: '🌾' }, { crop: 'Rice', icon: '🍚' }, { crop: 'Banana', icon: '🍌' }, { crop: 'Coconut', icon: '🥥' },
+  { crop: 'Turmeric', icon: '🟡' }, { crop: 'Groundnut', icon: '🥜' }, { crop: 'Ragi', icon: '🌾' }, { crop: 'Tapioca', icon: '🍠' },
+  { crop: 'Black Pepper', icon: '⚫' }, { crop: 'Cardamom', icon: '🌿' }, { crop: 'Arecanut', icon: '🌰' }, { crop: 'Chilli', icon: '🌶️' },
+  { crop: 'Black Gram', icon: '🫘' }, { crop: 'Tomato', icon: '🍅' }, { crop: 'Onion', icon: '🧅' }, { crop: 'Drumstick', icon: '🥢' },
+  { crop: 'Cotton', icon: '☁️' }, { crop: 'Maize', icon: '🌽' }, { crop: 'Wheat', icon: '🌿' }, { crop: 'Potato', icon: '🥔' },
 ];
 
 type SortKey = 'modal_price' | 'market' | 'state';
@@ -42,14 +44,15 @@ const compact = (v: number) =>
 
 export default function IndiaAgriculture() {
   const { location } = useFarmLocation();
-  const [crop, setCrop] = useState('Rice');
+  const [crop, setCrop] = useState('Paddy');
+  const [region, setRegion] = useState<'south' | 'india'>('south');
   const [stateFilter, setStateFilter] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: 'modal_price', desc: true });
   const [indicatorCode, setIndicatorCode] = useState('AG.YLD.CREL.KG');
   const [fromYear, setFromYear] = useState(2000);
 
-  const mandi = useLive<MandiData>(`/api/live/mandi?${qs({ crop, max_records: 150 })}`, 30 * 60 * 1000);
+  const mandi = useLive<MandiData>(`/api/live/mandi?${qs({ crop, region: region === 'south' ? 'south' : null, max_records: region === 'south' ? 60 : 150 })}`, 30 * 60 * 1000);
   const wb = useLive<IndiaIndicators>('/api/live/india-indicators');
 
   const records = useMemo(() => {
@@ -75,10 +78,16 @@ export default function IndiaAgriculture() {
 
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold" style={{ fontFamily: 'Baloo 2' }}>🇮🇳 India Agriculture — live</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold" style={{ fontFamily: 'Baloo 2' }}>
+              {region === 'south' ? '🌴 South India Agriculture — live' : '🇮🇳 India Agriculture — live'}
+            </h1>
             <p className="text-neutral-500 mt-1 max-w-2xl">
-              Today's real wholesale prices from mandis across India, and official long-term farm statistics. Nothing on this page is simulated.
+              Today's real wholesale prices from {region === 'south' ? 'mandis in Tamil Nadu, Kerala, Karnataka, Andhra Pradesh, Telangana and Puducherry' : 'mandis across India'}, and official long-term farm statistics. Nothing on this page is simulated.
             </p>
+            <div className="flex gap-2 mt-3">
+              <button className={`chip !py-1.5 ${region === 'south' ? 'active' : ''}`} onClick={() => { setRegion('south'); setStateFilter(null); }}>🌴 South India</button>
+              <button className={`chip !py-1.5 ${region === 'india' ? 'active' : ''}`} onClick={() => { setRegion('india'); setStateFilter(null); }}>🇮🇳 All India</button>
+            </div>
           </div>
           <LocationPicker />
         </header>
@@ -132,13 +141,13 @@ export default function IndiaAgriculture() {
             <>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                 {[
-                  { l: 'Typical price (India)', v: rupees(mandi.data.summary.median_modal), s: 'median of all mandis' },
+                  { l: `Typical price (${region === 'south' ? 'South India' : 'India'})`, v: rupees(mandi.data.summary.median_modal), s: 'median of all mandis' },
                   { l: 'Lowest seen', v: rupees(mandi.data.summary.lowest), s: 'per quintal' },
                   { l: 'Highest seen', v: rupees(mandi.data.summary.highest), s: 'per quintal' },
                   {
                     l: location.state ? `In ${location.state}` : 'Your state',
                     v: myState ? rupees(myState.avg_modal) : '—',
-                    s: myState ? `${myState.markets} mandis · ${myState.avg_modal >= mandi.data.summary.median_modal ? 'above' : 'below'} India` : 'no reports in this sample',
+                    s: myState ? `${myState.markets} mandis · ${myState.avg_modal >= mandi.data.summary.median_modal ? 'above' : 'below'} ${region === 'south' ? 'South India' : 'India'}` : 'no reports in this sample',
                   },
                 ].map(k => (
                   <div key={k.l} className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-4">
@@ -169,7 +178,7 @@ export default function IndiaAgriculture() {
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
-                  <p className="text-xs text-neutral-500 mt-1">🟧 your state · dashed line = India typical price</p>
+                  <p className="text-xs text-neutral-500 mt-1">🟧 your state · dashed line = {region === 'south' ? 'South India' : 'India'} typical price</p>
                 </div>
 
                 <div className="lg:col-span-7">
@@ -223,7 +232,7 @@ export default function IndiaAgriculture() {
               </div>
             </>
           ) : mandi.data && !mandi.loading ? (
-            <p className="text-neutral-500">No mandi has reported {crop} prices recently.</p>
+            <p className="text-neutral-500">No {region === 'south' ? 'South Indian ' : ''}mandi has reported {crop} prices recently.{region === 'south' && <> <button className="underline font-semibold" onClick={() => setRegion('india')}>Try All India</button></>}</p>
           ) : !mandi.error && <div className="h-72 shimmer rounded-xl" />}
         </section>
 

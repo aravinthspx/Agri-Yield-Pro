@@ -56,8 +56,9 @@ type KpiKey = 'yield' | 'total' | 'health' | 'pest';
 // ─── Constants & farmer-friendly helpers ─────────────────────────────────────
 
 const DEFAULTS = { crop: 'Rice', area: 2.5, soilPh: 6.5, nitrogen: 80, phosphorus: 40, potassium: 45 };
-const POPULAR_CROPS = ['Rice', 'Wheat', 'Maize', 'Cotton', 'Sugarcane', 'Groundnut', 'Tomato', 'Chickpea'];
-const COMPARE_CROPS = ['Rice', 'Wheat', 'Maize', 'Cotton', 'Groundnut', 'Tomato', 'Onion', 'Potato'];
+// South Indian staples first.
+const POPULAR_CROPS = ['Rice', 'Banana', 'Groundnut', 'Sugarcane', 'Turmeric', 'Finger Millet', 'Chilli', 'Tomato'];
+const COMPARE_CROPS = ['Rice', 'Banana', 'Coconut', 'Turmeric', 'Groundnut', 'Tomato', 'Onion', 'Ragi'];
 const CEREALS = ['Rice', 'Wheat', 'Maize', 'Sorghum', 'Pearl Millet', 'Finger Millet', 'Barley', 'Oats'];
 const FARM_PALETTE = ['#2F7D32', '#F2A71B', '#F07F1A', '#8B5A2B', '#3A86C8', '#7E57C2', '#C0392B', '#558B2F'];
 const WEATHER_REFRESH_MS = 10 * 60 * 1000;
@@ -217,10 +218,10 @@ export default function Dashboard() {
   const loc = qs({ lat: location.lat, lon: location.lon });
   const weather = useLive<LiveWeather>(`/api/live/weather?${loc}`, WEATHER_REFRESH_MS);
   const rain = useLive<RainHistory>(`/api/live/rain-history?${loc}`);
-  const [mandiScope, setMandiScope] = useState<'state' | 'india'>('state');
+  const [mandiScope, setMandiScope] = useState<'state' | 'south' | 'india'>('state');
   const mandiState = mandiScope === 'state' ? location.state : null;
-  const mandi = useLive<MandiData>(`/api/live/mandi?${qs({ crop, state: mandiState, max_records: 60 })}`, 30 * 60 * 1000);
-  const compare = useLive<MandiCompare>(`/api/live/mandi/compare?${qs({ crops: COMPARE_CROPS.join(',') })}`);
+  const mandi = useLive<MandiData>(`/api/live/mandi?${qs({ crop, state: mandiState, region: mandiScope === 'south' ? 'south' : null, max_records: 60 })}`, 30 * 60 * 1000);
+  const compare = useLive<MandiCompare>(`/api/live/mandi/compare?${qs({ crops: COMPARE_CROPS.join(','), state: location.state })}`);
   const indicators = useLive<IndiaIndicators>('/api/live/india-indicators');
   const [selectedDay, setSelectedDay] = useState(0);
   const [marketQuery, setMarketQuery] = useState('');
@@ -253,10 +254,12 @@ export default function Dashboard() {
 
   const showToast = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(''), 2500); };
 
-  // Fall back to India-wide prices when the farmer's state has no reports for this crop today.
+  // Widen the search when nothing is reported today: my state → South India → All India.
   useEffect(() => {
-    if (mandiScope === 'state' && mandi.data && mandi.data.count === 0) setMandiScope('india');
-  }, [mandi.data, mandiScope]);
+    if (!mandi.data || mandi.loading || mandi.data.count > 0) return;
+    if (mandiScope === 'state') setMandiScope('south');
+    else if (mandiScope === 'south') setMandiScope('india');
+  }, [mandi.data, mandi.loading, mandiScope]);
   useEffect(() => { setMandiScope('state'); }, [crop, location.state]);
 
   // ── API health ──
@@ -440,7 +443,7 @@ export default function Dashboard() {
       detail: <>
         From {area} hectare ({toAcres(area).toFixed(1)} acre) you can expect <b>{results.total_yield} tonnes</b> ({(results.total_yield * 10).toFixed(0)} quintal).
         {income && pricePerQtl && mandi.data && <> At today's mandi price of {rupees(pricePerQtl)}/quintal
-          ({mandi.data.state ?? 'all India'}, {prettyDate(mandi.data.latest_date)}) that is about <b>{lakhs(income)}</b>.</>}
+          ({mandi.data.region ?? mandi.data.state ?? 'all India'}, {prettyDate(mandi.data.latest_date)}) that is about <b>{lakhs(income)}</b>.</>}
       </>,
     },
     {
@@ -879,6 +882,7 @@ export default function Dashboard() {
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <button className={`chip !py-1 !px-3 !text-xs ${mandiScope === 'state' ? 'active' : ''}`} disabled={!location.state}
                     onClick={() => setMandiScope('state')}>📍 {location.state ?? 'My state'}</button>
+                  <button className={`chip !py-1 !px-3 !text-xs ${mandiScope === 'south' ? 'active' : ''}`} onClick={() => setMandiScope('south')}>🌴 South India</button>
                   <button className={`chip !py-1 !px-3 !text-xs ${mandiScope === 'india' ? 'active' : ''}`} onClick={() => setMandiScope('india')}>🇮🇳 All India</button>
                   <div className="relative flex-1 min-w-[140px]">
                     <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500" />
@@ -927,7 +931,7 @@ export default function Dashboard() {
 
               <div className="lg:col-span-5 space-y-5">
                 <div className="glass-card p-5">
-                  <CardTitle icon={<BarChart3 size={18} />} title="Compare crop prices" sub="Today's average · ₹/quintal · tap to switch" tone="text-blue-400 bg-blue-500/10" />
+                  <CardTitle icon={<BarChart3 size={18} />} title="Compare crop prices" sub={`${compare.data?.region ?? location.state ?? 'India'} mandis today · ₹/quintal · tap to switch`} tone="text-blue-400 bg-blue-500/10" />
                   {compare.error && !compare.data && <ErrorNote msg={compare.error} onRetry={compare.reload} />}
                   {compareRows.length ? (
                     <ResponsiveContainer width="100%" height={compareRows.length * 28 + 10}>

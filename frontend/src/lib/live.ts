@@ -32,7 +32,7 @@ export interface MandiRecord {
 }
 
 export interface MandiData {
-  source: string; commodity: string; state: string | null; unit: string;
+  source: string; commodity: string; state: string | null; region?: string; unit: string;
   total_reported: number; count: number; latest_date: string | null; dataset_updated: string | null;
   summary: { avg_modal: number; median_modal: number; lowest: number; highest: number } | null;
   by_state: { state: string; markets: number; avg_modal: number; min_modal: number; max_modal: number }[];

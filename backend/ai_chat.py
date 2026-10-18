@@ -387,7 +387,7 @@ def _live_market_reply(crop: str, state: Optional[str]):
     from live_data import mandi_prices
     for scope in ([state] if state else []) + [None]:
         try:
-            d = mandi_prices(crop=crop, state=scope, max_records=40)
+            d = mandi_prices(crop=crop, state=scope, region=None, max_records=40)
         except HTTPException:
             continue
         if not d["summary"]:

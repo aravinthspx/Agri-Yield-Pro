@@ -16,11 +16,12 @@ class CropYieldInput(BaseModel):
     temperature: float = Field(..., ge=-10.0, le=60.0, example=45.0)
     humidity: float = Field(..., ge=0.0, le=100.0, example=86.0)
     wind_speed: float = Field(..., ge=0.0, le=100.0, example=6.0)
-    nitrogen: float = Field(..., ge=0.0, le=300.0, example=32.0)
-    phosphorus: float = Field(..., ge=0.0, le=200.0, example=42.0)
-    potassium: float = Field(..., ge=0.0, le=200.0, example=35.0)
+    nitrogen: float = Field(..., ge=0.0, le=400.0, example=32.0)
+    phosphorus: float = Field(..., ge=0.0, le=300.0, example=42.0)
+    potassium: float = Field(..., ge=0.0, le=400.0, example=35.0)
     soil_quality: float = Field(default=3.0, ge=1.0, le=5.0, example=3.0)
     area_acres: Optional[float] = Field(default=1.0, ge=0.1, le=1000.0)
+    state: Optional[str] = Field(default=None, description="Farmer's state, used for live mandi prices")
 
 class InputVsIdealItem(BaseModel):
     param: str
@@ -50,6 +51,8 @@ class FertilizerCostItem(BaseModel):
 
 class EconomicAnalysis(BaseModel):
     crop_msp_per_quintal_inr: float
+    price_source: str = "Government MSP (reference)"
+    price_date: Optional[str] = None
     estimated_input_cost_inr: float
     potential_yield_gain_tonnes: float
     gross_revenue_gain_inr: float
@@ -61,7 +64,7 @@ class SatelliteVegetation(BaseModel):
     estimated_ndvi: float
     vigor_status: str
     vegetation_condition_index: float
-    sensor_platform: str = "Sentinel-2 & Landsat-8 Simulation"
+    sensor_platform: str = "Estimated from your field inputs (not a satellite image)"
     spectral_band_red: float
     spectral_band_nir: float
 
@@ -259,11 +262,62 @@ CROPS_AGRONOMY: Dict[str, Dict[str, Any]] = {
             "potassium": (30.0, 50.0),
             "soil_quality": (3.0, 5.0)
         },
-        "soil_types": ["Sandy Loam", "Red Sandy", "Loamy"]
+        "soil_types": ["Sandy Loam", "Red Soil", "Loamy"]
+    },
+    # ── South Indian crops (ideal ranges from TNAU / ICAR package-of-practices) ──
+    "Banana": {
+        "seasons": ["Kharif", "Rabi", "Zaid"],
+        "base_yield": 37.0,
+        "msp_per_quintal": None,
+        "ideal": {
+            "soil_ph": (6.0, 7.5), "temperature": (26.0, 30.0), "humidity": (70.0, 90.0), "wind_speed": (0.0, 10.0),
+            "nitrogen": (180.0, 300.0), "phosphorus": (50.0, 100.0), "potassium": (200.0, 350.0), "soil_quality": (3.5, 5.0)
+        },
+        "soil_types": ["Loamy", "Clay", "Black / Alluvial", "Red Soil"]
+    },
+    "Turmeric": {
+        "seasons": ["Kharif"],
+        "base_yield": 6.0,
+        "msp_per_quintal": None,
+        "ideal": {
+            "soil_ph": (5.5, 7.5), "temperature": (20.0, 30.0), "humidity": (70.0, 90.0), "wind_speed": (0.0, 15.0),
+            "nitrogen": (100.0, 150.0), "phosphorus": (50.0, 80.0), "potassium": (100.0, 150.0), "soil_quality": (3.5, 5.0)
+        },
+        "soil_types": ["Red Soil", "Loamy", "Sandy Loam", "Laterite"]
+    },
+    "Finger Millet (Ragi)": {
+        "seasons": ["Kharif", "Rabi"],
+        "base_yield": 1.8,
+        "msp_per_quintal": 4886.0,
+        "ideal": {
+            "soil_ph": (5.0, 8.0), "temperature": (20.0, 30.0), "humidity": (40.0, 70.0), "wind_speed": (0.0, 20.0),
+            "nitrogen": (40.0, 60.0), "phosphorus": (20.0, 40.0), "potassium": (20.0, 40.0), "soil_quality": (2.5, 5.0)
+        },
+        "soil_types": ["Red Soil", "Sandy Loam", "Laterite", "Loamy"]
+    },
+    "Black Gram (Urad)": {
+        "seasons": ["Kharif", "Rabi"],
+        "base_yield": 0.8,
+        "msp_per_quintal": 7800.0,
+        "ideal": {
+            "soil_ph": (6.5, 7.8), "temperature": (25.0, 35.0), "humidity": (50.0, 75.0), "wind_speed": (0.0, 15.0),
+            "nitrogen": (20.0, 30.0), "phosphorus": (40.0, 60.0), "potassium": (20.0, 40.0), "soil_quality": (3.0, 5.0)
+        },
+        "soil_types": ["Clay", "Black / Alluvial", "Loamy"]
+    },
+    "Chilli": {
+        "seasons": ["Kharif", "Rabi"],
+        "base_yield": 2.8,
+        "msp_per_quintal": None,
+        "ideal": {
+            "soil_ph": (6.0, 7.0), "temperature": (20.0, 30.0), "humidity": (50.0, 70.0), "wind_speed": (0.0, 15.0),
+            "nitrogen": (100.0, 150.0), "phosphorus": (50.0, 75.0), "potassium": (50.0, 75.0), "soil_quality": (3.0, 5.0)
+        },
+        "soil_types": ["Black / Alluvial", "Red Soil", "Loamy", "Sandy Loam"]
     }
 }
 
-ALL_SOIL_TYPES = ["Loamy", "Clay", "Sandy Loam", "Black / Alluvial", "Peaty", "Silt", "Chalky"]
+ALL_SOIL_TYPES = ["Red Soil", "Laterite", "Black / Alluvial", "Clay", "Loamy", "Sandy Loam", "Coastal Sandy", "Peaty", "Silt", "Chalky"]
 ALL_CROPS = list(CROPS_AGRONOMY.keys())
 
 
@@ -462,12 +516,49 @@ init_trained_models()
 
 # ─── Prediction & Optimization Logic ──────────────────────────────────────────
 
+_price_pool = None
+
+
+def _price_for(crop_name: str, state: Optional[str], msp: Optional[float]):
+    """Today's mandi price (farmer's state → South India → All India), else the MSP.
+
+    The live lookup gets a short time budget so predictions never hang on a slow price API.
+    """
+    global _price_pool
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as _Timeout
+    if _price_pool is None:
+        _price_pool = ThreadPoolExecutor(max_workers=2)
+
+    def lookup():
+        from live_data import mandi_prices
+        from fastapi import HTTPException as _HTTPError
+        scopes = ([(state, None, state)] if state else []) + [(None, "south", "South India"), (None, None, "All India")]
+        for scope_state, region, label in scopes:
+            try:
+                d = mandi_prices(crop=crop_name.split(" (")[0], state=scope_state, region=region, max_records=40)
+            except _HTTPError:
+                continue
+            if d.get("summary"):
+                return float(d["summary"]["median_modal"]), f"Live mandi price · {label} · Agmarknet", d.get("latest_date")
+        return None
+
+    try:
+        found = _price_pool.submit(lookup).result(timeout=6)
+    except _Timeout:
+        found = None  # keeps running in the background and fills the cache for next time
+    if found:
+        return found
+    if msp:
+        return float(msp), "Government MSP (reference — live mandi price not available yet)", None
+    return 0.0, "Live mandi price not available yet — try again shortly", None
+
+
 def run_yield_prediction_and_optimization(data: CropYieldInput) -> CropYieldOptimizationResponse:
     crop_name = data.crop if data.crop in CROPS_AGRONOMY else "Rice"
     crop_info = CROPS_AGRONOMY[crop_name]
     ideal = crop_info["ideal"]
     base_yield = crop_info["base_yield"]
-    msp_rate = crop_info.get("msp_per_quintal", 2200.0)
+    msp_rate, price_source, price_date = _price_for(crop_name, data.state, crop_info.get("msp_per_quintal"))
     area_acres = data.area_acres or 1.0
     area_ha = area_acres * 0.404686
 
@@ -706,6 +797,8 @@ def run_yield_prediction_and_optimization(data: CropYieldInput) -> CropYieldOpti
 
     economic_analysis = EconomicAnalysis(
         crop_msp_per_quintal_inr=msp_rate,
+        price_source=price_source,
+        price_date=price_date,
         estimated_input_cost_inr=round(effective_input_cost, 2),
         potential_yield_gain_tonnes=potential_gain_tonnes,
         gross_revenue_gain_inr=gross_rev_gain,
@@ -782,54 +875,29 @@ def get_crops_metadata():
         "crops": ALL_CROPS,
         "soil_types": ALL_SOIL_TYPES,
         "current_season": get_current_season(),
+        "ideal_ranges": {name: {k: list(v) for k, v in info["ideal"].items()} for name, info in CROPS_AGRONOMY.items()},
+        "crop_soils": {name: info["soil_types"] for name, info in CROPS_AGRONOMY.items()},
         "presets": [
-            {
-                "name": "Paper Example 1: Sunflower in Peaty Soil (Stressed)",
-                "data": {
-                    "crop": "Sunflower",
-                    "soil_type": "Peaty",
-                    "soil_ph": 4.0,
-                    "temperature": 45.0,
-                    "humidity": 86.0,
-                    "wind_speed": 6.0,
-                    "nitrogen": 32.0,
-                    "phosphorus": 42.0,
-                    "potassium": 35.0,
-                    "soil_quality": 3.0,
-                    "area_acres": 2.5
-                }
-            },
-            {
-                "name": "Paper Example 2: Barley in Clay Soil (Optimal)",
-                "data": {
-                    "crop": "Barley",
-                    "soil_type": "Clay",
-                    "soil_ph": 6.8,
-                    "temperature": 18.0,
-                    "humidity": 55.0,
-                    "wind_speed": 8.0,
-                    "nitrogen": 70.0,
-                    "phosphorus": 35.0,
-                    "potassium": 40.0,
-                    "soil_quality": 4.0,
-                    "area_acres": 3.0
-                }
-            },
-            {
-                "name": "Rice in Alluvial Soil (Kharif High Yield)",
-                "data": {
-                    "crop": "Rice",
-                    "soil_type": "Clay",
-                    "soil_ph": 6.2,
-                    "temperature": 27.0,
-                    "humidity": 75.0,
-                    "wind_speed": 10.0,
-                    "nitrogen": 100.0,
-                    "phosphorus": 45.0,
-                    "potassium": 45.0,
-                    "soil_quality": 4.2,
-                    "area_acres": 2.0
-                }
-            }
+            {"name": "Samba Paddy — Thanjavur delta",
+             "data": {"crop": "Rice", "soil_type": "Clay", "soil_ph": 6.8, "temperature": 28.0, "humidity": 78.0, "wind_speed": 9.0,
+                      "nitrogen": 120.0, "phosphorus": 40.0, "potassium": 40.0, "soil_quality": 4.0, "area_acres": 2.0}},
+            {"name": "Banana — Theni / Trichy",
+             "data": {"crop": "Banana", "soil_type": "Loamy", "soil_ph": 7.0, "temperature": 28.0, "humidity": 75.0, "wind_speed": 8.0,
+                      "nitrogen": 220.0, "phosphorus": 70.0, "potassium": 280.0, "soil_quality": 4.0, "area_acres": 1.5}},
+            {"name": "Turmeric — Erode",
+             "data": {"crop": "Turmeric", "soil_type": "Red Soil", "soil_ph": 6.5, "temperature": 27.0, "humidity": 75.0, "wind_speed": 10.0,
+                      "nitrogen": 125.0, "phosphorus": 60.0, "potassium": 110.0, "soil_quality": 3.8, "area_acres": 2.0}},
+            {"name": "Ragi — Karnataka dryland",
+             "data": {"crop": "Finger Millet (Ragi)", "soil_type": "Red Soil", "soil_ph": 6.2, "temperature": 26.0, "humidity": 55.0, "wind_speed": 12.0,
+                      "nitrogen": 50.0, "phosphorus": 30.0, "potassium": 25.0, "soil_quality": 3.0, "area_acres": 3.0}},
+            {"name": "Groundnut — Anantapur (AP)",
+             "data": {"crop": "Groundnut", "soil_type": "Red Soil", "soil_ph": 6.5, "temperature": 28.0, "humidity": 60.0, "wind_speed": 12.0,
+                      "nitrogen": 30.0, "phosphorus": 45.0, "potassium": 40.0, "soil_quality": 3.2, "area_acres": 2.5}},
+            {"name": "Paper Example 1: Sunflower in Peaty Soil (Stressed)",
+             "data": {"crop": "Sunflower", "soil_type": "Peaty", "soil_ph": 4.0, "temperature": 45.0, "humidity": 86.0, "wind_speed": 6.0,
+                      "nitrogen": 32.0, "phosphorus": 42.0, "potassium": 35.0, "soil_quality": 3.0, "area_acres": 2.5}},
+            {"name": "Paper Example 2: Barley in Clay Soil (Optimal)",
+             "data": {"crop": "Barley", "soil_type": "Clay", "soil_ph": 6.8, "temperature": 18.0, "humidity": 55.0, "wind_speed": 8.0,
+                      "nitrogen": 70.0, "phosphorus": 35.0, "potassium": 40.0, "soil_quality": 4.0, "area_acres": 3.0}},
         ]
     }

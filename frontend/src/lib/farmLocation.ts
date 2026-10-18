@@ -12,7 +12,9 @@ export interface FarmLocation {
 
 const KEY = 'farmLocation';
 const EVENT = 'farmLocationChange';
-export const DEFAULT_LOCATION: FarmLocation = { lat: 28.61, lon: 77.21, name: 'New Delhi', district: 'New Delhi', state: 'Delhi', source: 'default' };
+export const DEFAULT_LOCATION: FarmLocation = { lat: 13.08, lon: 80.27, name: 'Chennai', district: 'Chennai', state: 'Tamil Nadu', source: 'default' };
+export const SOUTH_STATES = ['Tamil Nadu', 'Kerala', 'Karnataka', 'Andhra Pradesh', 'Telangana', 'Puducherry'];
+const looksLikeCoords = (s: string) => /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/.test(s.trim());
 
 function readStored(): FarmLocation | null {
   try {
@@ -73,6 +75,16 @@ export function useFarmLocation() {
   }, []);
 
   useEffect(() => { if (!readStored()) detect(); }, [detect]);
+
+  // The place-name lookup can fail transiently; retry when only coordinates were saved.
+  useEffect(() => {
+    if (!looksLikeCoords(location.name)) return;
+    let cancelled = false;
+    getJson<{ name?: string; district?: string; state?: string }>(`/api/live/reverse?${qs({ lat: location.lat, lon: location.lon })}`)
+      .then(p => { if (!cancelled && p.name) saveFarmLocation({ ...location, name: p.name, district: p.district, state: p.state }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [location]);
 
   return { location, setLocation: saveFarmLocation, detect, busy, error };
 }

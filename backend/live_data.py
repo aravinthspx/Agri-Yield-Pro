@@ -53,19 +53,32 @@ def _get_json(url: str, timeout: float = 25, retries: int = 3) -> Any:
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
             if attempt == retries:
                 raise
-        time.sleep(1.5 * (attempt + 1))
+        time.sleep(2 ** attempt + 0.5)
+
+
+_key_locks: Dict[str, threading.Lock] = defaultdict(threading.Lock)
 
 
 def _cached(key: str, ttl: int, fn: Callable[[], Any]) -> Any:
-    now = time.time()
-    with _cache_lock:
+    def fresh():
         hit = _cache.get(key)
-        if hit and now - hit[0] < ttl:
-            return hit[1]
-    value = fn()
+        return hit if hit and time.time() - hit[0] < ttl else None
+
     with _cache_lock:
-        _cache[key] = (now, value)
-    return value
+        hit = fresh()
+        if hit:
+            return hit[1]
+        key_lock = _key_locks[key]
+    # One fetch per key: concurrent callers wait for it instead of hitting the API again.
+    with key_lock:
+        with _cache_lock:
+            hit = fresh()
+            if hit:
+                return hit[1]
+        value = fn()
+        with _cache_lock:
+            _cache[key] = (time.time(), value)
+        return value
 
 
 def _upstream(fn: Callable[[], Any], source: str) -> Any:
@@ -231,6 +244,8 @@ def reverse_geocode(lat: float = Query(..., ge=-90, le=90), lon: float = Query(.
 
 # ─── Mandi prices (Agmarknet via data.gov.in) ────────────────────────────────
 
+SOUTH_STATES = ["Tamil Nadu", "Kerala", "Karnataka", "Andhra Pradesh", "Telangana", "Puducherry"]
+
 # App crop name → Agmarknet commodity keyword (the API does keyword matching).
 MANDI_COMMODITY = {
     "rice": "Rice", "paddy": "Paddy", "wheat": "Wheat", "maize": "Maize", "maize (corn)": "Maize", "cotton": "Cotton",
@@ -242,6 +257,9 @@ MANDI_COMMODITY = {
     "apple": "Apple", "orange": "Orange", "grapes": "Grapes", "guava": "Guava", "papaya": "Papaya", "pineapple": "Pineapple",
     "pomegranate": "Pomegranate", "watermelon": "Water Melon", "green gram": "Green Gram", "black gram": "Black Gram",
     "soybean": "Soyabean", "mustard": "Mustard", "lentil": "Lentil", "coconut": "Coconut", "garlic": "Garlic",
+    "ragi": "Ragi", "tapioca": "Tapioca", "black pepper": "Black Pepper", "pepper": "Black Pepper",
+    "cardamom": "Cardamoms", "arecanut": "Arecanut", "drumstick": "Drumstick", "tamarind": "Tamarind",
+    "small onion": "Onion", "copra": "Copra", "urad": "Black Gram", "red gram": "Arhar", "tur": "Arhar",
 }
 
 
@@ -249,11 +267,27 @@ def _commodity_for(crop: str) -> str:
     return MANDI_COMMODITY.get(crop.strip().lower(), crop.strip())
 
 
+# data.gov.in throttles bursts on the shared sample key: allow 2 calls at a time, spaced out.
+_mandi_slots = threading.BoundedSemaphore(2)
+_mandi_pace_lock = threading.Lock()
+_mandi_last_call = [0.0]
+
+
+def _mandi_paced_get(url: str) -> Any:
+    with _mandi_slots:
+        with _mandi_pace_lock:
+            wait = 0.35 - (time.time() - _mandi_last_call[0])
+            if wait > 0:
+                time.sleep(wait)
+            _mandi_last_call[0] = time.time()
+        return _get_json(url, timeout=30, retries=4)
+
+
 def _mandi_page(commodity: str, state: Optional[str], offset: int, limit: int) -> dict:
     params = {"api-key": DATA_GOV_IN_KEY, "format": "json", "limit": limit, "offset": offset, "filters[commodity]": commodity}
     if state:
         params["filters[state]"] = state
-    return _get_json(f"https://api.data.gov.in/resource/{MANDI_RESOURCE}?" + urllib.parse.urlencode(params), timeout=30)
+    return _mandi_paced_get(f"https://api.data.gov.in/resource/{MANDI_RESOURCE}?" + urllib.parse.urlencode(params))
 
 
 def _fetch_mandi(commodity: str, state: Optional[str], max_records: int) -> dict:
@@ -266,6 +300,11 @@ def _fetch_mandi(commodity: str, state: Optional[str], max_records: int) -> dict
         with ThreadPoolExecutor(max_workers=3) as pool:
             for d in pool.map(lambda o: _mandi_page(commodity, state, o, page), offsets):
                 records.extend(d.get("records", []))
+    if state:
+        # data.gov.in falls back to unfiltered rows when a state has no match — keep only that state.
+        records = [r for r in records if (r.get("state") or "").strip().lower() == state.strip().lower()]
+        if not records:
+            total = 0
     return {"total": total, "records": records, "updated": first.get("updated_date")}
 
 
@@ -319,30 +358,56 @@ def _summarize(records: List[dict]) -> dict:
     }
 
 
+def _fetch_region(commodity: str, states: List[str], max_records: int) -> dict:
+    """Fetch each state separately so every southern state is represented."""
+    per_state = max(10, max_records // len(states))
+
+    def one(s):
+        try:
+            return _fetch_mandi(commodity, s, per_state)
+        except Exception:
+            return {"total": 0, "records": [], "updated": None}
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        parts = list(pool.map(one, states))
+    return {"total": sum(p["total"] for p in parts), "records": [r for p in parts for r in p["records"]],
+            "updated": max((p["updated"] for p in parts if p["updated"]), default=None)}
+
+
 @router.get("/mandi")
 def mandi_prices(
     crop: str = Query(..., min_length=2, max_length=60),
     state: Optional[str] = Query(None, max_length=60),
+    region: Optional[str] = Query(None, pattern="^(south|india)$"),
     max_records: int = Query(80, ge=10, le=400),
 ):
-    """Latest wholesale prices reported by mandis (APMC markets) across India."""
+    """Latest wholesale prices reported by mandis (APMC markets).
+
+    `state` limits to one state; `region=south` covers the six southern states/UTs.
+    """
     commodity = _commodity_for(crop)
+    south = region == "south" and not state
 
     def fetch():
-        raw = _fetch_mandi(commodity, state, max_records)
+        raw = _fetch_region(commodity, SOUTH_STATES, max_records) if south else _fetch_mandi(commodity, state, max_records)
         return {"source": "Agmarknet · data.gov.in", "commodity": commodity, "state": state,
+                "region": "South India" if south else (state or "All India"),
                 "total_reported": raw["total"], "dataset_updated": raw["updated"], **_summarize(raw["records"])}
-    return _upstream(lambda: _cached(f"mandi:{commodity}:{state}:{max_records}", 1800, fetch), "Agmarknet (data.gov.in)")
+    key = f"mandi:{commodity}:{state}:{'south' if south else ''}:{max_records}"
+    return _upstream(lambda: _cached(key, 1800, fetch), "Agmarknet (data.gov.in)")
 
 
 @router.get("/mandi/compare")
-def mandi_compare(crops: str = Query("Rice,Wheat,Maize,Cotton,Groundnut,Tomato,Onion,Potato", max_length=300)):
-    """Average modal price today for several crops — for side-by-side comparison."""
+def mandi_compare(
+    crops: str = Query("Rice,Banana,Coconut,Turmeric,Groundnut,Tomato,Onion,Ragi", max_length=300),
+    state: Optional[str] = Query(None, max_length=60),
+):
+    """Average modal price today for several crops in one state (or All India) — side by side."""
     names = [c.strip() for c in crops.split(",") if c.strip()][:10]
 
     def one(name: str):
         try:
-            d = mandi_prices(crop=name, state=None, max_records=30)
+            d = mandi_prices(crop=name, state=state, region=None, max_records=10 if state else 20)
             s = d["summary"]
             return {"crop": name, "commodity": d["commodity"], "avg_modal": s and s["avg_modal"],
                     "markets": d["count"], "latest_date": d["latest_date"]}
@@ -351,7 +416,7 @@ def mandi_compare(crops: str = Query("Rice,Wheat,Maize,Cotton,Groundnut,Tomato,O
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         rows = list(pool.map(one, names))
-    return {"source": "Agmarknet · data.gov.in", "unit": "₹ per quintal", "crops": rows}
+    return {"source": "Agmarknet · data.gov.in", "unit": "₹ per quintal", "region": state or "All India", "crops": rows}
 
 
 # ─── India indicators (World Bank) ───────────────────────────────────────────
