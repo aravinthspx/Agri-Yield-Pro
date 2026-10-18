@@ -1,12 +1,14 @@
-import React, { useState } from 'react'
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { Sprout, LayoutDashboard, Map, LogOut, UserPlus, Brain } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Sprout, LayoutDashboard, Map, Brain } from 'lucide-react'
 import Dashboard from './components/Dashboard'
 import CropPlanning from './components/CropPlanning'
 import IndiaAgriculture from './components/IndiaAgriculture/IndiaAgriculture'
 import YieldOptimizer from './components/YieldOptimizer/YieldOptimizer'
 import AIChatBox from './components/AIChatBox'
 import NotificationCenter from './components/NotificationCenter'
+import AccountMenu from './components/auth/AccountMenu'
+import { getToken, clearSession, authJson, saveUser, type AuthUser } from './lib/auth'
 import ErrorBoundary from './components/ErrorBoundary'
 import Login from './components/auth/Login'
 import Register from './components/auth/Register'
@@ -15,16 +17,7 @@ type AppTab = 'dashboard' | 'yield-optimizer' | 'crop-planning' | 'mospi-explore
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard')
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
-
-  const handleAddAccount = () => {
-    navigate('/register');
-  };
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans selection:bg-emerald-500/30">
@@ -97,20 +90,7 @@ function MainApp() {
           {/* User Actions */}
           <div className="flex items-center gap-0.5 sm:gap-2">
             <NotificationCenter />
-            <button
-              onClick={handleAddAccount}
-              className="flex items-center gap-2 px-1.5 sm:px-3 py-1.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all border border-transparent hover:border-emerald-500/20"
-            >
-              <UserPlus size={15} />
-              <span className="hidden sm:inline">Add Account</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-1.5 sm:px-3 py-1.5 rounded-xl text-sm font-medium text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
-            >
-              <LogOut size={15} />
-              <span className="hidden sm:inline">Log Out</span>
-            </button>
+            <AccountMenu />
           </div>
         </div>
       </nav>
@@ -137,13 +117,28 @@ function MainApp() {
   )
 }
 
+/** Sends visitors without a valid session to the login page. */
+function RequireAuth({ children }: { children: React.ReactElement }) {
+  const navigate = useNavigate();
+  const token = getToken();
+  useEffect(() => {
+    if (!token) return;
+    authJson<AuthUser>('/api/auth/me')
+      .then(saveUser)
+      .catch(err => {
+        if (/log in|expired|not found/i.test(String(err?.message))) { clearSession(); navigate('/login', { replace: true }); }
+      });
+  }, [token, navigate]);
+  return token ? children : <Navigate to="/login" replace />;
+}
+
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Navigate to={getToken() ? '/dashboard' : '/login'} replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<MainApp />} />
+      <Route path="/dashboard" element={<RequireAuth><MainApp /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )

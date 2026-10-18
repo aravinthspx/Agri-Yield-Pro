@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Sprout, Mail, Lock, Phone, User, MapPin } from 'lucide-react';
 import { API_BASE } from '../../config';
+import { PasswordChecklist } from './Login';
+import { cleanPhone } from '../../lib/auth';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -84,7 +86,7 @@ const Register = () => {
                 <label className="block text-sm font-medium text-neutral-300 mb-1.5">Phone Number</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
-                  <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-neutral-600" placeholder="+91" />
+                  <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: cleanPhone(e.target.value)})} inputMode="numeric" required className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-neutral-600" placeholder="10-digit mobile (+91)" />
                 </div>
               </div>
             </div>
@@ -107,6 +109,7 @@ const Register = () => {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                {formData.password && <div className="mt-2"><PasswordChecklist pw={formData.password} /></div>}
               </div>
 
               <div>

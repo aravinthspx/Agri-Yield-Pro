@@ -37,9 +37,13 @@ from database import engine, Base, get_db
 import models
 from auth import get_password_hash, verify_password, create_access_token
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from fastapi import Depends
 
 models.Base.metadata.create_all(bind=engine)
+
+from auth_routes import router as auth_router, normalize_phone, find_user_by_phone, session_for, check_password_strength
+app.include_router(auth_router)
 
 class UserCreate(BaseModel):
     full_name: str
@@ -55,15 +59,19 @@ class UserLogin(BaseModel):
 
 @app.post("/api/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if db_user:
+    email = user.email.strip().lower()
+    if db.query(models.User).filter(models.User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+    phone = normalize_phone(user.phone)
+    if find_user_by_phone(db, phone):
+        raise HTTPException(status_code=400, detail="This mobile number is already registered. Try logging in with OTP.")
+    check_password_strength(user.password)
+
     hashed_password = get_password_hash(user.password)
     new_user = models.User(
         full_name=user.full_name,
-        email=user.email,
-        phone=user.phone,
+        email=email,
+        phone=phone,
         hashed_password=hashed_password,
         state=user.state,
         district=user.district
@@ -75,12 +83,12 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/api/login")
 def login_user(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    db_user = db.query(models.User).filter(func.lower(models.User.email) == user.email.strip().lower()).first()
+    if db_user and not db_user.hashed_password:
+        raise HTTPException(status_code=401, detail="This account uses Google sign-in. Use 'Continue with Google' or log in with phone OTP.")
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(status_code=401, detail="Email or password is incorrect.")
-    
-    access_token = create_access_token(data={"sub": db_user.email})
-    return {"access_token": access_token, "token_type": "bearer", "user": {"full_name": db_user.full_name, "email": db_user.email}}
+    return session_for(db_user)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

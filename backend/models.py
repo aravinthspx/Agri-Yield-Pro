@@ -47,3 +47,17 @@ class FarmPlan(Base):
     expected_yield = Column(Float)
     crop_health = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class OtpCode(Base):
+    """One-time codes for phone login and password reset (only a hash is stored)."""
+    __tablename__ = "otp_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    phone = Column(String, index=True)
+    purpose = Column(String, default="login")
+    code_hash = Column(String)
+    attempts = Column(Integer, default=0)
+    used = Column(Boolean, default=False)
+    expires_at = Column(DateTime)
+    created_at = Column(DateTime)
