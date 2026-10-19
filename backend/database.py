@@ -40,9 +40,10 @@ else:
     # DATABASE_PASSWORD (optional) replaces the password in the URL — handy for Supabase's
     # "[YOUR-PASSWORD]" placeholder, and special characters need no manual %-encoding.
     _password = os.environ.get("DATABASE_PASSWORD", "").strip()  # pasted values often end in a newline
-    if _password:
+    _placeholder = not _url.password or "YOUR-PASSWORD" in _url.password
+    if _password and _placeholder:  # only fills a missing/placeholder password, never overrides a real one
         _url = _url.set(password=_password)
-    elif "YOUR-PASSWORD" in (_url.password or ""):
+    elif _placeholder and _url.password:
         raise RuntimeError("DATABASE_URL still contains the [YOUR-PASSWORD] placeholder: "
                            "set DATABASE_PASSWORD to your database password.")
     if _url.host not in ("localhost", "127.0.0.1") and "sslmode" not in _url.query:

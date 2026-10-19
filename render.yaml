@@ -16,10 +16,10 @@ services:
         value: production
       - key: SECRET_KEY
         generateValue: true          # Render creates a strong random value
-      - key: DATABASE_URL
-        sync: false                  # Postgres URL (Supabase: Session pooler URI)
-      - key: DATABASE_PASSWORD
-        sync: false                  # optional: replaces the password in DATABASE_URL
+      - key: DATABASE_URL            # wired from the Render Postgres below; no password handling
+        fromDatabase:
+          name: agri-yield-pro-db
+          property: connectionString
       - key: SMS_PROVIDER
         value: fast2sms
       - key: FAST2SMS_API_KEY
@@ -32,3 +32,11 @@ services:
         sync: false
       - key: MANDI_PROXY_URL           # Mumbai relay; data.gov.in blocks non-Indian servers
         value: https://agri-yield-pro-india.vercel.app/api/agmarknet
+
+databases:
+  - name: agri-yield-pro-db
+    plan: free                       # free Render Postgres expires after 30 days unless upgraded
+    region: singapore
+    databaseName: agri_yield
+    user: agri_yield
+    ipAllowList: []                  # only services inside Render can connect
