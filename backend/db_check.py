@@ -5,11 +5,20 @@
        venv\\Scripts\\python.exe db_check.py
 It connects once and prints OK, or exactly what is wrong. The password is never printed.
 """
+import getpass
+import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).with_name(".env"))
+
+# Optional: test a URL without editing .env, typing the password hidden:
+#     venv\Scripts\python.exe db_check.py "postgresql://user:[YOUR-PASSWORD]@host:5432/postgres"
+if len(sys.argv) > 1:
+    os.environ["DATABASE_URL"] = sys.argv[1]
+    os.environ["DATABASE_PASSWORD"] = getpass.getpass("Database password (hidden): ")
 
 from sqlalchemy import text  # noqa: E402
 
