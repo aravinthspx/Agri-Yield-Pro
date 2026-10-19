@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Sprout, Mail, Lock, Phone, ArrowLeft, Loader2, ShieldCheck, KeyRound } from 'lucide-react';
-import { getJson } from '../../lib/live';
+import { getJson, wakeBackend } from '../../lib/live';
 import {
   saveSession, useAuthConfig, loadGoogleScript, passwordProblems, cleanPhone, validPhone, type Session,
 } from '../../lib/auth';
@@ -28,6 +28,7 @@ function useCountdown() {
 export default function Login() {
   const navigate = useNavigate();
   const config = useAuthConfig();
+  useEffect(() => { wakeBackend(); }, []);  // free hosting sleeps; start waking it now
   const [view, setView] = useState<View>('email');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

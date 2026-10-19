@@ -10,6 +10,7 @@ import NotificationCenter from './components/NotificationCenter'
 import AccountMenu from './components/auth/AccountMenu'
 import { getToken, clearSession, authJson, saveUser, type AuthUser } from './lib/auth'
 import ErrorBoundary from './components/ErrorBoundary'
+import ServerWakeBanner from './components/ServerWakeBanner'
 import Login from './components/auth/Login'
 import Register from './components/auth/Register'
 
@@ -136,6 +137,8 @@ function RequireAuth({ children }: { children: React.ReactElement }) {
 
 function App() {
   return (
+    <>
+    <ServerWakeBanner />
     <Routes>
       <Route path="/" element={<Navigate to={getToken() ? '/dashboard' : '/login'} replace />} />
       <Route path="/login" element={<Login />} />
@@ -143,6 +146,7 @@ function App() {
       <Route path="/dashboard" element={<RequireAuth><MainApp /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </>
   )
 }
 

@@ -4,6 +4,7 @@ import { Eye, EyeOff, Sprout, Mail, Lock, Phone, User, MapPin } from 'lucide-rea
 import { API_BASE } from '../../config';
 import { PasswordChecklist } from './Login';
 import { cleanPhone } from '../../lib/auth';
+import { fetchWithWake } from '../../lib/live';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE}/api/register`, {
+      const response = await fetchWithWake(`${API_BASE}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

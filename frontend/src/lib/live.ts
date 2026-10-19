@@ -52,6 +52,37 @@ export interface IndiaIndicators {
 
 // ─── Fetch helpers ───────────────────────────────────────────────────────────
 
+// The free backend sleeps when idle and takes ~30-60 s to wake; meanwhile the proxy
+// answers 502/503/504. Retry for up to ~90 s and tell the UI the server is waking.
+const WAKE_CODES = new Set([502, 503, 504]);
+let waking = 0;
+const setWaking = (on: boolean) => {
+  waking = Math.max(0, waking + (on ? 1 : -1));
+  window.dispatchEvent(new CustomEvent('serverWaking', { detail: waking > 0 }));
+};
+
+export async function fetchWithWake(url: string, init?: RequestInit): Promise<Response> {
+  const deadline = Date.now() + 90_000;
+  let announced = false;
+  try {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const res = await fetch(url, init);
+        if (!WAKE_CODES.has(res.status) || Date.now() > deadline) return res;
+      } catch (err) {  // network error while the instance restarts
+        if (Date.now() > deadline) throw err;
+      }
+      if (!announced) { setWaking(true); announced = true; }
+      await new Promise(r => setTimeout(r, Math.min(2000 + attempt * 1000, 6000)));
+    }
+  } finally {
+    if (announced) setWaking(false);
+  }
+}
+
+/** Fire-and-forget request that starts waking the backend early (e.g. on the login page). */
+export const wakeBackend = () => { fetch(`${API_BASE}/api/health`).catch(() => {}); };
+
 export async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
   // Weather comes straight from Open-Meteo in the browser (see weather.ts); the backend is the fallback.
   if (path.startsWith('/api/live/weather?')) {
@@ -60,7 +91,7 @@ export async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
       return (await fetchWeatherDirect(Number(q.get('lat')), Number(q.get('lon')))) as T;
     } catch { /* fall through to the backend */ }
   }
-  const res = await fetch(`${API_BASE}${path}`, init);
+  const res = await fetchWithWake(`${API_BASE}${path}`, init);
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
     try { detail = (await res.json()).detail ?? detail; } catch { /* not JSON */ }
