@@ -2,6 +2,7 @@ import os
 import re
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -35,8 +36,19 @@ if SQLALCHEMY_DATABASE_URL.startswith(("postgres://", "postgresql://")):
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
     engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 else:
+    _url = make_url(SQLALCHEMY_DATABASE_URL)
+    # DATABASE_PASSWORD (optional) replaces the password in the URL — handy for Supabase's
+    # "[YOUR-PASSWORD]" placeholder, and special characters need no manual %-encoding.
+    _password = os.environ.get("DATABASE_PASSWORD", "")
+    if _password:
+        _url = _url.set(password=_password)
+    elif "YOUR-PASSWORD" in (_url.password or ""):
+        raise RuntimeError("DATABASE_URL still contains the [YOUR-PASSWORD] placeholder: "
+                           "set DATABASE_PASSWORD to your database password.")
+    if _url.host not in ("localhost", "127.0.0.1") and "sslmode" not in _url.query:
+        _url = _url.update_query_dict({"sslmode": "require"})
     # pre_ping/recycle: free Postgres tiers drop idle connections.
-    engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
+    engine = create_engine(_url, pool_pre_ping=True, pool_recycle=300)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

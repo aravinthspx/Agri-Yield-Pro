@@ -17,7 +17,9 @@ services:
       - key: SECRET_KEY
         generateValue: true          # Render creates a strong random value
       - key: DATABASE_URL
-        sync: false                  # paste your Neon / Render Postgres URL
+        sync: false                  # Postgres URL (Supabase: Session pooler URI)
+      - key: DATABASE_PASSWORD
+        sync: false                  # optional: replaces the password in DATABASE_URL
       - key: SMS_PROVIDER
         value: fast2sms
       - key: FAST2SMS_API_KEY
