@@ -4,6 +4,20 @@ import type { CropDetail, ActivePlan, FarmFormData } from './index';
 import { API_BASE } from './index';
 import { useFarmLocation } from '../../lib/farmLocation';
 import LocationPicker from '../LocationPicker';
+import { getJson, qs, type LiveWeather } from '../../lib/live';
+
+/** Today's real weather for the plan; empty if the weather service is unavailable. */
+async function todaysWeather(lat: number, lon: number) {
+  try {
+    const wx = await getJson<LiveWeather>(`/api/live/weather?${qs({ lat, lon })}`);
+    return {
+      temperature: wx.current.temperature,
+      rain_probability: Math.max(wx.current.rain_probability ?? 0, wx.daily[0]?.rain_probability ?? 0),
+      humidity: wx.current.humidity,
+      wind_speed: wx.current.wind_speed,
+    };
+  } catch { return {}; }
+}
 
 interface Props {
   crop: CropDetail;
@@ -58,6 +72,7 @@ export default function PlanForm({ crop, onPlanCreated }: Props) {
         lat: farmLocation.lat,
         lon: farmLocation.lon,
         state: farmLocation.state,
+        ...(await todaysWeather(farmLocation.lat, farmLocation.lon)),
       };
       const res = await fetch(`${API_BASE}/api/crop-plans`, {
         method: 'POST',

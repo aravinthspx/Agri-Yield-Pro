@@ -131,6 +131,11 @@ class FarmSetup(BaseModel):
     lat: Optional[float] = None
     lon: Optional[float] = None
     state: Optional[str] = None
+    # Live weather measured by the farmer's browser (preferred: servers get rate-limited)
+    temperature: Optional[float] = None
+    rain_probability: Optional[float] = None
+    humidity: Optional[float] = None
+    wind_speed: Optional[float] = None
     variety: str = ""
     planting_date: str = ""
     planting_method: str = ""
@@ -1198,7 +1203,10 @@ def create_crop_plan(farm_setup: FarmSetup):
     farm_dict = farm_setup.model_dump()
 
     weather = None
-    if farm_setup.lat is not None and farm_setup.lon is not None:
+    if farm_setup.temperature is not None:
+        weather = {"temperature": farm_setup.temperature, "rain_probability": int(farm_setup.rain_probability or 0),
+                   "humidity": farm_setup.humidity or 65, "wind_speed": farm_setup.wind_speed or 10}
+    elif farm_setup.lat is not None and farm_setup.lon is not None:
         try:
             cur = live_weather(lat=farm_setup.lat, lon=farm_setup.lon)["current"]
             weather = {"temperature": cur["temperature"], "rain_probability": cur["rain_probability"] or 0,

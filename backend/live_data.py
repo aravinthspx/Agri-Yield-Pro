@@ -33,6 +33,9 @@ USER_AGENT = "AgriYieldPro/1.0 (crop advisory app)"
 # Register at https://data.gov.in for a personal key with higher limits.
 DATA_GOV_IN_KEY = os.environ.get("DATA_GOV_IN_API_KEY", "579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b")
 MANDI_RESOURCE = "9ef84268-d588-465a-a308-a864a43d0070"
+# data.gov.in only accepts connections from India. When the backend is hosted
+# abroad, point this at the Mumbai relay (frontend/api/agmarknet.js on Vercel).
+MANDI_BASE_URL = os.environ.get("MANDI_PROXY_URL", "").strip() or f"https://api.data.gov.in/resource/{MANDI_RESOURCE}"
 
 # ─── HTTP + cache helpers ────────────────────────────────────────────────────
 
@@ -296,7 +299,7 @@ def _mandi_page(commodity: str, state: Optional[str], offset: int, limit: int) -
     params = {"api-key": DATA_GOV_IN_KEY, "format": "json", "limit": limit, "offset": offset, "filters[commodity]": commodity}
     if state:
         params["filters[state]"] = state
-    return _mandi_paced_get(f"https://api.data.gov.in/resource/{MANDI_RESOURCE}?" + urllib.parse.urlencode(params))
+    return _mandi_paced_get(f"{MANDI_BASE_URL}?" + urllib.parse.urlencode(params))
 
 
 def _fetch_mandi(commodity: str, state: Optional[str], max_records: int) -> dict:

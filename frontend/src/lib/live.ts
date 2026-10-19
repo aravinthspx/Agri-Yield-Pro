@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { API_BASE } from '../config';
+import { fetchWeatherDirect } from './weather';
 
 // ─── Types returned by backend /api/live/* ───────────────────────────────────
 
@@ -52,6 +53,13 @@ export interface IndiaIndicators {
 // ─── Fetch helpers ───────────────────────────────────────────────────────────
 
 export async function getJson<T>(path: string, init?: RequestInit): Promise<T> {
+  // Weather comes straight from Open-Meteo in the browser (see weather.ts); the backend is the fallback.
+  if (path.startsWith('/api/live/weather?')) {
+    const q = new URLSearchParams(path.split('?')[1]);
+    try {
+      return (await fetchWeatherDirect(Number(q.get('lat')), Number(q.get('lon')))) as T;
+    } catch { /* fall through to the backend */ }
+  }
   const res = await fetch(`${API_BASE}${path}`, init);
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
