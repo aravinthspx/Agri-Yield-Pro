@@ -39,7 +39,7 @@ else:
     _url = make_url(SQLALCHEMY_DATABASE_URL)
     # DATABASE_PASSWORD (optional) replaces the password in the URL — handy for Supabase's
     # "[YOUR-PASSWORD]" placeholder, and special characters need no manual %-encoding.
-    _password = os.environ.get("DATABASE_PASSWORD", "")
+    _password = os.environ.get("DATABASE_PASSWORD", "").strip()  # pasted values often end in a newline
     if _password:
         _url = _url.set(password=_password)
     elif "YOUR-PASSWORD" in (_url.password or ""):
