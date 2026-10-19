@@ -20,6 +20,14 @@ def _clean_db_url(raw: str) -> str:
 
 
 SQLALCHEMY_DATABASE_URL = _clean_db_url(os.environ.get("DATABASE_URL", "")) or "sqlite:///./farm_ai.db"
+if not SQLALCHEMY_DATABASE_URL.startswith(("sqlite", "postgres")):
+    # Explain a bad paste without printing the secret: only its length and first few characters.
+    _raw = os.environ.get("DATABASE_URL", "")
+    raise RuntimeError(
+        "DATABASE_URL is not a postgresql://… connection string "
+        f"(got {len(_raw)} characters starting with {_raw.strip()[:8]!r}). "
+        "Copy it again from Neon → Connect and make sure it begins with postgresql://"
+    )
 if SQLALCHEMY_DATABASE_URL.startswith(("postgres://", "postgresql://")):
     # Use the psycopg 3 driver (hosts hand out plain postgres:// URLs).
     SQLALCHEMY_DATABASE_URL = "postgresql+psycopg://" + SQLALCHEMY_DATABASE_URL.split("://", 1)[1]
