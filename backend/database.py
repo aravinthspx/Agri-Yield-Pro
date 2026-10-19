@@ -10,7 +10,13 @@ from sqlalchemy.orm import sessionmaker
 def _clean_db_url(raw: str) -> str:
     """Accept what dashboards' copy buttons paste: `psql '...'`, quotes, `DATABASE_URL=...`."""
     found = re.search(r"postgres(?:ql)?(?:\+\w+)?://[^\s'\"]+", raw or "")
-    return found.group(0) if found else (raw or "").strip().strip("'\"")
+    if found:
+        return found.group(0)
+    value = (raw or "").strip().strip("'\"")
+    # "user:password@host/db?..." pasted without the scheme
+    if re.fullmatch(r"[^\s@/:]+:[^\s@]+@[^\s/]+/\S+", value):
+        return "postgresql://" + value
+    return value
 
 
 SQLALCHEMY_DATABASE_URL = _clean_db_url(os.environ.get("DATABASE_URL", "")) or "sqlite:///./farm_ai.db"
