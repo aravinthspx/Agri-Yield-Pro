@@ -1,4 +1,5 @@
 import os
+import re
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
@@ -6,7 +7,13 @@ from sqlalchemy.orm import sessionmaker
 
 # Production: DATABASE_URL from a hosted Postgres (Neon / Render).
 # Local development: falls back to the SQLite file next to this module.
-SQLALCHEMY_DATABASE_URL = os.environ.get("DATABASE_URL", "").strip() or "sqlite:///./farm_ai.db"
+def _clean_db_url(raw: str) -> str:
+    """Accept what dashboards' copy buttons paste: `psql '...'`, quotes, `DATABASE_URL=...`."""
+    found = re.search(r"postgres(?:ql)?(?:\+\w+)?://[^\s'\"]+", raw or "")
+    return found.group(0) if found else (raw or "").strip().strip("'\"")
+
+
+SQLALCHEMY_DATABASE_URL = _clean_db_url(os.environ.get("DATABASE_URL", "")) or "sqlite:///./farm_ai.db"
 if SQLALCHEMY_DATABASE_URL.startswith(("postgres://", "postgresql://")):
     # Use the psycopg 3 driver (hosts hand out plain postgres:// URLs).
     SQLALCHEMY_DATABASE_URL = "postgresql+psycopg://" + SQLALCHEMY_DATABASE_URL.split("://", 1)[1]
