@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { Sprout, LayoutDashboard, Map, Brain } from 'lucide-react'
 import Dashboard from './components/Dashboard'
@@ -16,79 +16,61 @@ import Register from './components/auth/Register'
 
 type AppTab = 'dashboard' | 'yield-optimizer' | 'crop-planning' | 'mospi-explorer'
 
+const TABS: { id: AppTab; domId: string; label: string; Icon: typeof Sprout }[] = [
+  { id: 'dashboard', domId: 'nav-dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { id: 'yield-optimizer', domId: 'nav-yield-optimizer', label: 'AI Yield Optimizer', Icon: Brain },
+  { id: 'crop-planning', domId: 'nav-crop-planning', label: 'Crop Planning', Icon: Sprout },
+  { id: 'mospi-explorer', domId: 'nav-mospi', label: 'India Agriculture', Icon: Map },
+]
+
+/** Page tabs; a highlight slides to the active one. Button ids are used by other components to switch tabs. */
+function NavTabs({ active, onChange }: { active: AppTab; onChange: (t: AppTab) => void }) {
+  const wrap = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ left: 0, width: 0 })
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = wrap.current?.querySelector<HTMLElement>(`[data-tab="${active}"]`)
+      if (el) setBox({ left: el.offsetLeft, width: el.offsetWidth })
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [active])
+  return (
+    <div ref={wrap} className="relative flex gap-0.5 sm:gap-1 justify-self-center p-1 rounded-2xl bg-neutral-900/60">
+      <span className="tab-indicator" style={{ left: box.left, width: box.width, opacity: box.width ? 1 : 0 }} aria-hidden />
+      {TABS.map(({ id, domId, label, Icon }) => (
+        <button key={id} id={domId} data-tab={id} title={label} onClick={() => onChange(id)} aria-current={active === id ? 'page' : undefined}
+          className={`relative z-10 flex items-center gap-2 px-2.5 sm:px-3 lg:px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${active === id ? 'text-emerald-400' : 'text-neutral-500 hover:text-neutral-200'}`}>
+          <Icon size={15} />
+          <span className="hidden lg:inline">{label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function MainApp() {
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard')
 
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white font-sans selection:bg-emerald-500/30">
-      <nav
-        className="sticky top-0 z-50 border-b border-white/5"
-        style={{ background: 'rgba(251,246,234,0.85)', backdropFilter: 'blur(20px)' }}
-      >
-        <div className="max-w-[1600px] mx-auto px-3 md:px-6 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 h-14">
+    <div className="min-h-screen text-white font-sans selection:bg-emerald-500/30">
+      <nav className="sticky top-0 z-50 px-2 sm:px-4 pt-2 sm:pt-3">
+        <div className="nav-float max-w-[1500px] mx-auto px-2 sm:px-4 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 h-14">
           {/* Logo */}
           <div className="flex items-center gap-2.5 justify-self-start">
-            <div className="p-1.5 rounded-xl"
-              style={{ background: 'linear-gradient(135deg, rgba(47,125,50,0.2), rgba(47,125,50,0.1))', border: '1px solid rgba(47,125,50,0.2)' }}>
-              <Sprout size={18} className="text-emerald-400" />
+            <div className="p-1.5 rounded-xl shadow-sm" style={{ background: 'linear-gradient(135deg, #2F7D32, #7CB342)' }}>
+              <Sprout size={18} className="text-cream" />
             </div>
-            <span className="text-sm font-bold gradient-text-emerald hidden sm:block" style={{ fontFamily: 'Baloo 2' }}>
+            <span className="text-base font-extrabold hidden sm:block bg-clip-text text-transparent"
+              style={{ fontFamily: 'Baloo 2', backgroundImage: 'linear-gradient(135deg, #2F7D32, #6FA83A 60%, #D98E0B)' }}>
               Agri-Yield Pro
             </span>
           </div>
 
-          {/* Nav Tabs */}
-          <div className="flex gap-0.5 sm:gap-1 justify-self-center">
-            <button
-              id="nav-dashboard"
-              title="Dashboard"
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'dashboard'
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
-                : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
-                }`}
-            >
-              <LayoutDashboard size={15} />
-              <span className="hidden lg:inline">Dashboard</span>
-            </button>
-            <button
-              id="nav-yield-optimizer"
-              title="AI Yield Optimizer"
-              onClick={() => setActiveTab('yield-optimizer')}
-              className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'yield-optimizer'
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
-                : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
-                }`}
-            >
-              <Brain size={15} />
-              <span className="hidden lg:inline">AI Yield Optimizer</span>
-            </button>
-            <button
-              id="nav-crop-planning"
-              title="Crop Planning"
-              onClick={() => setActiveTab('crop-planning')}
-              className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'crop-planning'
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
-                : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
-                }`}
-            >
-              <Sprout size={15} />
-              <span className="hidden lg:inline">Crop Planning</span>
-            </button>
-            <button
-              id="nav-mospi"
-              title="India Agriculture"
-              onClick={() => setActiveTab('mospi-explorer')}
-              className={`flex items-center gap-2 px-2 sm:px-3 lg:px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'mospi-explorer'
-                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
-                : 'text-neutral-500 hover:text-neutral-300 hover:bg-white/5'
-                }`}
-            >
-              <Map size={15} />
-              <span className="hidden lg:inline">India Agriculture</span>
-            </button>
-          </div>
+          {/* Nav Tabs with a sliding highlight */}
+          <NavTabs active={activeTab} onChange={setActiveTab} />
 
           {/* User Actions */}
           <div className="flex items-center gap-0.5 sm:gap-2 justify-self-end">
@@ -99,17 +81,16 @@ function MainApp() {
       </nav>
 
       {/* ── Page Content ── */}
-      {/* ── Page Content ── */}
-      <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
+      <div className={activeTab === 'dashboard' ? 'page-enter' : ''} style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
         <Dashboard />
       </div>
-      <div style={{ display: activeTab === 'yield-optimizer' ? 'block' : 'none' }}>
+      <div className={activeTab === 'yield-optimizer' ? 'page-enter' : ''} style={{ display: activeTab === 'yield-optimizer' ? 'block' : 'none' }}>
         <YieldOptimizer />
       </div>
-      <div style={{ display: activeTab === 'crop-planning' ? 'block' : 'none' }}>
+      <div className={activeTab === 'crop-planning' ? 'page-enter' : ''} style={{ display: activeTab === 'crop-planning' ? 'block' : 'none' }}>
         <CropPlanning />
       </div>
-      <div style={{ display: activeTab === 'mospi-explorer' ? 'block' : 'none' }}>
+      <div className={activeTab === 'mospi-explorer' ? 'page-enter' : ''} style={{ display: activeTab === 'mospi-explorer' ? 'block' : 'none' }}>
         <IndiaAgriculture />
       </div>
       

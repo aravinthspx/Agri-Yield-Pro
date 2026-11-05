@@ -46,7 +46,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex font-sans text-white overflow-hidden selection:bg-emerald-500/30">
+    <div className="min-h-screen flex font-sans text-white overflow-hidden selection:bg-emerald-500/30">
       
       <div className="w-full flex items-center justify-center p-6 sm:p-12 relative min-h-screen">
         <div className="absolute inset-0 z-0">

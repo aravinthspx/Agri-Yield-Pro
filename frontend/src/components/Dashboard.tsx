@@ -16,6 +16,7 @@ import {
   type LiveWeather, type RainHistory, type MandiData, type MandiCompare, type IndiaIndicators,
 } from '../lib/live';
 import LocationPicker from './LocationPicker';
+import FarmScene from './FarmScene';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -486,7 +487,8 @@ export default function Dashboard() {
       <div className="px-4 md:px-6 py-6 max-w-[1500px] mx-auto">
 
         {/* ══ WELCOME BANNER ═══════════════════════════════════════════════════ */}
-        <section className="farm-banner p-6 md:p-8 mb-6 shadow-lg">
+        <section className="farm-banner farm-banner-scene p-6 md:p-8 mb-6">
+          <FarmScene className="pointer-events-none absolute right-0 bottom-0 h-full w-full md:w-[62%] opacity-40 md:opacity-80 [mask-image:linear-gradient(to_right,transparent,black_35%)]" />
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-2">

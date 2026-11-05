@@ -786,3 +786,117 @@ input[type=range].farm-range { width: 100%; accent-color: #2F7D32; cursor: point
 /* Bell wiggle when there is an unread alert */
 @keyframes bell-shake { 0%, 88%, 100% { transform: rotate(0); } 90% { transform: rotate(14deg); } 93% { transform: rotate(-12deg); } 96% { transform: rotate(8deg); } }
 .bell-shake { animation: bell-shake 4s ease-in-out infinite; transform-origin: top center; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Lovable-style polish (appended last so it refines the rules above)
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Soft aurora blobs + faint dot grid behind every page */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+  background-image: radial-gradient(rgba(91,60,30,0.08) 1px, transparent 1.2px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+          mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+body::after {
+  content: ''; position: fixed; inset: -15%; pointer-events: none; z-index: -2;
+  background:
+    radial-gradient(32% 28% at 18% 22%, rgba(124,179,66,0.22), transparent 70%),
+    radial-gradient(28% 26% at 84% 12%, rgba(242,167,27,0.22), transparent 70%),
+    radial-gradient(34% 30% at 72% 88%, rgba(58,134,200,0.12), transparent 70%),
+    radial-gradient(30% 26% at 8% 85%, rgba(240,127,26,0.10), transparent 70%);
+  filter: blur(30px);
+  animation: aurora-drift 28s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -2%, 0) scale(1.05); }
+  100% { transform: translate3d(-2%, 2%, 0) scale(1.02); }
+}
+
+/* Cards: lighter, layered shadow, coloured ring on hover */
+.glass-card {
+  background: rgba(255,253,247,0.88);
+  border: 1px solid rgba(226,212,186,0.85);
+  border-radius: 22px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 1px 2px rgba(91,60,30,0.05),
+    0 12px 32px -14px rgba(91,60,30,0.20);
+  transition: box-shadow .25s ease, border-color .25s ease, transform .3s ease, opacity .3s ease;
+}
+.glass-card:hover {
+  border-color: rgba(47,125,50,0.30);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 0 0 4px rgba(47,125,50,0.06),
+    0 20px 44px -18px rgba(47,125,50,0.35);
+}
+.clickable-card:hover, .crop-card:hover, .category-card:hover { transform: translateY(-3px); }
+
+
+/* Primary buttons: gradient + light sweep on hover */
+button.bg-emerald-500, a.bg-emerald-500 {
+  background-image: linear-gradient(135deg, #2F7D32 0%, #3E8E41 55%, #6FA83A 100%);
+  box-shadow: 0 10px 24px -12px rgba(47,125,50,0.75), inset 0 1px 0 rgba(255,255,255,0.25);
+  position: relative; overflow: hidden; isolation: isolate;
+}
+button.bg-emerald-500::after, a.bg-emerald-500::after {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  transform: translateX(-120%); transition: transform .7s ease;
+}
+button.bg-emerald-500:hover::after, a.bg-emerald-500:hover::after { transform: translateX(120%); }
+button.bg-emerald-500:hover { filter: brightness(1.05); }
+
+/* Chips & inputs */
+.chip { box-shadow: 0 1px 2px rgba(91,60,30,0.05); }
+.chip.active { background-image: linear-gradient(135deg, #2F7D32, #4E9A3A); }
+.farm-input:focus { box-shadow: 0 0 0 4px rgba(47,125,50,0.14); }
+
+/* Banner: animated gradient shimmer */
+.farm-banner {
+  background: linear-gradient(110deg, #2F7D32 0%, #4E9A3A 35%, #7CB342 60%, #F2A71B 100%);
+  background-size: 200% 200%;
+  animation: banner-shift 18s ease-in-out infinite alternate;
+  box-shadow: 0 24px 60px -24px rgba(47,125,50,0.55);
+}
+@keyframes banner-shift { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+
+/* Floating glass nav. The blur sits on ::before so the nav itself does not become
+   the containing block for fixed-position pop-ups inside it. */
+.nav-float { position: relative; border-radius: 20px; }
+.nav-float::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; z-index: -1;
+  background: rgba(255,253,247,0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(226,212,186,0.8);
+  box-shadow: 0 10px 30px -14px rgba(91,60,30,0.25), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+.tab-indicator {
+  position: absolute; top: 4px; bottom: 4px; border-radius: 12px; z-index: 0;
+  background: linear-gradient(135deg, rgba(47,125,50,0.16), rgba(124,179,66,0.16));
+  border: 1px solid rgba(47,125,50,0.28);
+  box-shadow: 0 6px 16px -8px rgba(47,125,50,0.45);
+  transition: left .35s cubic-bezier(.3,.9,.3,1.15), width .35s cubic-bezier(.3,.9,.3,1.15);
+}
+
+/* Page fade when switching tabs */
+@keyframes page-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.page-enter { animation: page-enter .25s ease-out both; }
+
+/* Farm illustration motion */
+@keyframes sun-spin { to { transform: rotate(360deg); } }
+@keyframes cloud-drift { from { transform: translateX(-8%); } to { transform: translateX(8%); } }
+@keyframes crop-sway { 0%,100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+.scene-sun-rays { transform-origin: center; transform-box: fill-box; animation: sun-spin 40s linear infinite; }
+.scene-cloud { animation: cloud-drift 14s ease-in-out infinite alternate; }
+.scene-crop { transform-origin: bottom center; transform-box: fill-box; animation: crop-sway 4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  body::after, .farm-banner, .scene-sun-rays, .scene-cloud, .scene-crop, .page-enter { animation: none !important; }
+}
+
+/* When the animated scene is shown, it replaces the plain CSS hills */
+.farm-banner-scene::after { display: none; }

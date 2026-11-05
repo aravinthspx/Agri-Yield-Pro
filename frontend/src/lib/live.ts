@@ -68,7 +68,10 @@ export async function fetchWithWake(url: string, init?: RequestInit): Promise<Re
     for (let attempt = 0; ; attempt++) {
       try {
         const res = await fetch(url, init);
-        if (!WAKE_CODES.has(res.status) || Date.now() > deadline) return res;
+        // Our API answers its own errors (e.g. "mandi source not reachable") as JSON: return those
+        // at once. Only the host's HTML/empty 502-504 while the server starts means "still waking".
+        const fromOurApi = (res.headers.get('content-type') || '').includes('application/json');
+        if (!WAKE_CODES.has(res.status) || fromOurApi || Date.now() > deadline) return res;
       } catch (err) {  // network error while the instance restarts
         if (Date.now() > deadline) throw err;
       }

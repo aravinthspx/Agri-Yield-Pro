@@ -6,6 +6,7 @@ import {
   saveSession, useAuthConfig, loadGoogleScript, passwordProblems, cleanPhone, validPhone, type Session,
 } from '../../lib/auth';
 import OtpInput from './OtpInput';
+import FarmScene from '../FarmScene';
 
 type View = 'email' | 'phone' | 'forgot';
 interface OtpSent { sent_to: string; expires_in: number; resend_after: number; sms_mode: string; dev_code?: string }
@@ -146,9 +147,10 @@ export default function Login() {
   return (
     <div className="min-h-screen flex font-sans text-neutral-100 overflow-hidden">
       {/* Left: farm welcome panel */}
-      <div className="hidden lg:flex lg:w-1/2 farm-banner !rounded-none items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-1/2 farm-banner farm-banner-scene !rounded-none items-start justify-center p-12 pt-[14vh] relative">
+        <FarmScene className="pointer-events-none absolute inset-x-0 bottom-0 w-full h-[55%]" />
         <div className="relative z-10 text-center text-cream max-w-md">
-          <div className="text-8xl mb-6 chat-float">🌾</div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cream/20 text-sm font-bold mb-6 backdrop-blur-sm">🌾 Agri-Yield Pro · for Indian farmers</div>
           <h1 className="text-5xl font-extrabold mb-4" style={{ fontFamily: 'Baloo 2' }}>Vanakkam, Farmer!</h1>
           <p className="text-lg text-cream/90">Live weather, today's mandi prices and AI crop advice for your field — in your language.</p>
           <div className="flex justify-center gap-3 mt-8 text-sm font-bold">
